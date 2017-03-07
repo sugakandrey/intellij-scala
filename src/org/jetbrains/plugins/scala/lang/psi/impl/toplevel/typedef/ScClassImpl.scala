@@ -15,7 +15,6 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.icons.Icons
-import org.jetbrains.plugins.scala.lang.parser.ScalaElementTypes
 import org.jetbrains.plugins.scala.lang.parser.ScalaElementTypes.{CLASS_DEFINITION, PRIMARY_CONSTRUCTOR}
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaElementVisitor
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScPrimaryConstructor
@@ -108,7 +107,11 @@ class ScClassImpl private (stub: StubElement[ScTemplateDefinition], nodeType: IE
   override def getAllMethods: Array[PsiMethod] = {
     val res = new ArrayBuffer[PsiMethod]()
     val names = new mutable.HashSet[String]
-    res ++= getConstructors
+
+    res ++= constructor.toSeq.flatMap(_.getFunctionWrappers)
+    res ++= functions.filter(_.isConstructor).collect {
+      case function: ScFunction => function
+    }.flatMap(_.getFunctionWrappers(isStatic = false, isInterface = false, Some(this)))
 
     TypeDefinitionMembers.SignatureNodes.forAllSignatureNodes(this) { node =>
       val isInterface = node.info.namedElement match {
@@ -161,15 +164,8 @@ class ScClassImpl private (stub: StubElement[ScTemplateDefinition], nodeType: IE
     res.toArray
   }
 
-  override def getConstructors: Array[PsiMethod] = {
-    val buffer = new ArrayBuffer[PsiMethod]
-    buffer ++= functions.filter(_.isConstructor).flatMap(_.getFunctionWrappers(isStatic = false, isInterface = false, Some(this)))
-    constructor match {
-      case Some(x) => buffer ++= x.getFunctionWrappers
-      case _ =>
-    }
-    buffer.toArray
-  }
+  override def getConstructors: Array[PsiMethod] =
+    constructors.toArray
 
   override protected def syntheticMethodsNoOverrideImpl: Seq[PsiMethod] = {
     val buf = new ArrayBuffer[PsiMethod]
