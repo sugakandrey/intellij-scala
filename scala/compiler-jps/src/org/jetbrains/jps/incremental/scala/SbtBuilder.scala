@@ -37,7 +37,6 @@ class SbtBuilder extends ModuleLevelBuilder(BuilderCategory.TRANSLATOR) {
             chunk: ModuleChunk,
             dirtyFilesHolder: DirtyFilesHolder[JavaSourceRootDescriptor, ModuleBuildTarget],
             outputConsumer: ModuleLevelBuilder.OutputConsumer): ModuleLevelBuilder.ExitCode = {
-
     if (isDisabled(context) || ChunkExclusionService.isExcluded(chunk))
       return ExitCode.NOTHING_DONE
 

@@ -4,7 +4,7 @@ import java.util
 
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.jps.incremental._
-import org.jetbrains.jps.incremental.resources.{StandardResourceBuilderEnabler, ResourcesBuilder}
+import org.jetbrains.jps.incremental.resources.{ResourcesBuilder, StandardResourceBuilderEnabler}
 import org.jetbrains.jps.incremental.scala.sources.{SbtModuleType, SharedSourcesModuleType}
 import org.jetbrains.jps.model.module.JpsModule
 

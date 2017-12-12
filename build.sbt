@@ -86,7 +86,7 @@ lazy val compilerJps =
   .enablePlugins(SbtIdeaPlugin)
   .settings(
     libraryDependencies ++=
-      Seq(Dependencies.nailgun) ++
+      Seq(Dependencies.nailgun, Dependencies.bcel) ++
         DependencyGroups.sbtBundled
   )
 
@@ -150,6 +150,7 @@ lazy val ideaRunner =
       s"-Didea.config.path=${homePrefix.getCanonicalPath}/.ScalaPluginIC/config",
       "-Dapple.laf.useScreenMenuBar=true",
       s"-Dplugin.path=${packagedPluginDir.value}",
+      s"-Dcompiler.process.debug.port=4000",
       "-Didea.ProcessCanceledException=disabled"
     ),
     products in Compile := {
