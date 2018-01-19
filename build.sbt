@@ -105,8 +105,8 @@ lazy val compilerJps =
 
 lazy val compilerShared =
   newProject("compiler-shared", file("scala/compiler-shared"))
-    .enablePlugins(SbtIdeaPlugin)
-    .settings(libraryDependencies += Dependencies.nailgun)
+  .enablePlugins(SbtIdeaPlugin)
+  .settings(libraryDependencies ++= Seq(Dependencies.nailgun, Dependencies.bcel))
 
 lazy val runners =
   newProject("runners", file("scala/runners"))
