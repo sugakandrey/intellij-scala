@@ -4,7 +4,6 @@ import javax.swing.Icon
 
 import org.jetbrains.plugins.scala.icons.Icons
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScDecoratedIconOwner
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScModifierListOwner
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScMember}
 
 /**
@@ -12,14 +11,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScMem
 * Date: 22.02.2008
 */
 
-trait ScClassParameter extends ScParameter with ScModifierListOwner with ScMember with ScDecoratedIconOwner {
-  def isVal: Boolean
-
-  def isVar: Boolean
-
-  def isPrivateThis: Boolean
-
-  // TODO isEffectiveValOrVar? (or isClassMember?)
+trait ScClassParameter extends ScParameter with ScMember with ScDecoratedIconOwner {
   /** Is the parmameter is explicitly marked as a val or a var; or a case class parameter that is automatically a val. */
   def isEffectiveVal: Boolean = isVal || isVar || isCaseClassVal
 

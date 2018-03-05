@@ -23,6 +23,9 @@ trait ScModifierListOwner extends ScalaPsiElement with PsiModifierListOwnerAdapt
     val child = this.stubOrPsiChild(ScalaElementTypes.MODIFIERS)
     child.getOrElse(ScalaPsiElementFactory.createEmptyModifierList(this))
   }
+  
+  def isPrivateThis: Boolean =
+    getModifierList.accessModifier.forall(m => m.isPrivate && m.isThis)
 
   def hasModifierProperty(name: String): Boolean = hasModifierPropertyInner(name)
 
