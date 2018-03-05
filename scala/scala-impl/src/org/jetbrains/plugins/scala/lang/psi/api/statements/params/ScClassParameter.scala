@@ -12,13 +12,6 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScMem
 */
 
 trait ScClassParameter extends ScParameter with ScMember with ScDecoratedIconOwner {
-  def isVal: Boolean
-
-  def isVar: Boolean
-
-  def isPrivateThis: Boolean
-
-  // TODO isEffectiveValOrVar? (or isClassMember?)
   /** Is the parmameter is explicitly marked as a val or a var; or a case class parameter that is automatically a val. */
   def isEffectiveVal: Boolean = isVal || isVar || isCaseClassVal
 
