@@ -5,7 +5,7 @@ package impl
 package statements
 
 import com.intellij.lang.ASTNode
-import com.intellij.psi.PsiElementVisitor
+import com.intellij.psi.{PsiElement, PsiElementVisitor}
 import org.jetbrains.plugins.scala.extensions.ifReadAllowed
 import org.jetbrains.plugins.scala.lang.parser.ScalaElementTypes._
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaElementVisitor
@@ -55,4 +55,6 @@ class ScVariableDefinitionImpl private (stub: ScVariableStub, node: ASTNode)
   def typeElement: Option[ScTypeElement] = byPsiOrStub(findChild(classOf[ScTypeElement]))(_.typeElement)
 
   def pList: ScPatternList = getStubOrPsiChild(PATTERN_LIST)
+
+  def nameId: PsiElement = findChildByType[PsiElement](TokenSets.ID_SET)
 }

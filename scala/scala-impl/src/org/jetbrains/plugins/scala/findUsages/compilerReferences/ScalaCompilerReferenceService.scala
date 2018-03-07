@@ -7,17 +7,14 @@ import java.util.function.BiConsumer
 import scala.collection.JavaConverters._
 import com.intellij.compiler.CompilerReferenceService
 import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase
-import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase.{
-  CompilerElementInfo,
-  IndexCloseReason,
-  IndexOpenReason
-}
+import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase.{CompilerElementInfo, IndexCloseReason, IndexOpenReason}
 import com.intellij.compiler.server.{BuildManagerListener, CustomBuilderMessageHandler}
 import com.intellij.openapi.compiler.{CompilationStatusListener, CompileContext, CompilerTopics}
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.{PsiDocumentManager, PsiElement, PsiModifier, PsiModifierListOwner}
 import com.intellij.util.messages.MessageBusConnection
 import org.jetbrains.plugin.scala.compilerReferences.{BuildData, CompilerReferenceIndexBuilder}
@@ -112,6 +109,10 @@ private[findUsages] class ScalaCompilerReferenceService(
 //
 //    place.map(new CompilerElementInfo(_, searchElements: _*)).orNull
     super.asCompilerElements(psiElement, buildHierarchyForLibraryElements, checkNotDirty)
+  
+  def getUsagesOf()
+  
+  final case class LinesWithUsagesInFile(file: VirtualFile, lines: Seq[Int])
 }
 
 private[findUsages] object ScalaCompilerReferenceService {

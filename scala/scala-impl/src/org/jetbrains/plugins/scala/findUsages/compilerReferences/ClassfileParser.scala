@@ -20,7 +20,6 @@ private object ClassfileParser {
   def parse(file: File): ParsedClassfile         = parse(new FileInputStream(file))
   def parse(vfile: VirtualFile): ParsedClassfile = parse(vfile.getInputStream)
  
-
   def fqnFromInternalName(internal: String): String = internal.replaceAll("/", ".")
 
   private[this] trait ReferenceCollector {
