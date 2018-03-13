@@ -19,6 +19,7 @@ import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory._
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.TypeDefinitionMembers
 import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, ScTypeText}
 import org.jetbrains.plugins.scala.lang.psi.types.{BaseTypes, ScCompoundType, ScType, Signature}
+import org.jetbrains.plugins.scala.lang.refactoring._
 import org.jetbrains.plugins.scala.project.ProjectContext
 import org.jetbrains.plugins.scala.settings.annotations.Implementation
 
@@ -243,18 +244,11 @@ object AddOnlyStrategy {
     import `type`.projectContext
 
     val canonicalTypes = `type` match {
-      case compound@ScCompoundType(comps, _, _) =>
-        val uselessTypes = Set("_root_.scala.Product", "_root_.scala.Serializable", "_root_.java.lang.Object")
-        val filtered = comps.filterNot(c => uselessTypes.contains(c.canonicalText))
-        val newCompType = compound.copy(components = filtered)
-        Seq(newCompType.canonicalText)
+      case compound: ScCompoundType => Seq(compound.canonicalCodeText)
       case tp =>
         import BaseTypes.get
 
         val baseTypes = tp.extractClass match {
-          case Some(sc: ScTypeDefinition) if sc.getTruncedQualifiedName == "scala.Some" =>
-            get(tp).map(_.canonicalText)
-              .filter(_.startsWith("_root_.scala.Option"))
           case Some(sc: ScTypeDefinition) if sc.getTruncedQualifiedName.startsWith("scala.collection") =>
             val goodTypes = Set(
               "_root_.scala.collection.mutable.Seq[",

@@ -94,9 +94,9 @@ trait ScType extends ProjectContextOwner {
   def visitType(visitor: TypeVisitor)
 
   def typeDepth: Int = 1
-
+  
   def presentableText: String = typeSystem.presentableText(this, withPrefix = true)
-
+  
   def canonicalText: String = typeSystem.canonicalText(this)
 }
 
