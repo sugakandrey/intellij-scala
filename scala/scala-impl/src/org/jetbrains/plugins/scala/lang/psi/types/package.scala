@@ -3,6 +3,7 @@ package org.jetbrains.plugins.scala.lang.psi
 import com.intellij.psi.{PsiClass, PsiNamedElement, PsiType, PsiTypeParameter}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAliasDefinition
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.TypeParamIdOwner
+import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScTrait}
 import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation.shouldExpand
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScDesignatorType, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameterType, _}
@@ -11,8 +12,10 @@ import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{P
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScTypeUtil.AliasType
+import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
 import org.jetbrains.plugins.scala.project.ProjectContext
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil.areClassesEquivalent
+import org.jetbrains.plugins.scala.extensions._
 
 import scala.util.control.NoStackTrace
 /**
@@ -277,4 +280,32 @@ package object types {
   }
 
   private object RecursionException extends NoStackTrace
+  
+  object SymbolicDesignator {
+    sealed trait Associativity
+    
+    object Associativity {
+      final case object Left extends Associativity
+      final case object Right extends Associativity
+      
+      def apply(name: String): Associativity = 
+        if (name.endsWith(":")) Right
+        else                    Left
+    }
+    
+    def unapply(tpe: ScType): Option[Associativity] = tpe.extractDesignated(false).collect {
+      case e @ (_: ScTypeAliasDefinition | _: ScClass | _: ScTrait) if ScalaNamesUtil.isOperatorName(e.name) => 
+        Associativity(e.getName)
+    }
+  }
+  
+  object InfixSymbolicParameterizedType {
+    import SymbolicDesignator._
+    
+    def unapply(tpe: ScParameterizedType): Option[(ScType, (ScType, ScType), Associativity)] = tpe match {
+      case ScParameterizedType(des @ SymbolicDesignator(assoc), Seq(arg1, arg2)) =>
+        Some((des, (arg1, arg2), assoc))
+      case _ => None
+    }
+  }
 }

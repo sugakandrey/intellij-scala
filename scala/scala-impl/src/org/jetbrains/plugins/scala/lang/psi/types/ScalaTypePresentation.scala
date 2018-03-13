@@ -17,6 +17,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorTy
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScTypeUtil
+import org.jetbrains.plugins.scala.lang.psi.types.SymbolicDesignator.Associativity
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -214,7 +215,12 @@ trait ScalaTypePresentation extends api.TypePresentation {
       }
     }
 
-    def innerTypeText(t: ScType, needDotType: Boolean = true, checkWildcard: Boolean = false): String = {
+     def innerTypeText(
+      t: ScType,
+      needDotType: Boolean = true,
+      checkWildcard: Boolean = false,
+      contextAssoc: Option[Associativity] = None
+    ): String =
       t match {
         case namedType: NamedType => namedType.name
         case ScAbstractType(tpt, _, _) => tpt.name.capitalize + api.ScTypePresentation.ABSTRACT_TYPE_POSTFIX
@@ -240,6 +246,15 @@ trait ScalaTypePresentation extends api.TypePresentation {
           nameFun(e)
         case proj: ScProjectionType if proj != null =>
           projectionTypeText(proj, needDotType)
+        case InfixSymbolicParameterizedType(des, (lhs, rhs), assoc) =>
+          val lhsText    = innerTypeText(lhs, contextAssoc = Option(assoc))
+          val rhsText    = innerTypeText(rhs, contextAssoc = Option(assoc))
+          val opText     = innerTypeText(des)
+          val result     = s"$lhsText $opText $rhsText"
+          val needToWrap = contextAssoc.exists(_ != assoc)
+          
+          if (needToWrap) s"($result)"
+          else            result
         case ParameterizedType(des, typeArgs) =>
           innerTypeText(des) + typeSeqText(typeArgs, "[", ", ", "]", checkWildcard = true)
         case JavaArrayType(argument) => s"Array[${innerTypeText(argument)}]"
@@ -259,7 +274,6 @@ trait ScalaTypePresentation extends api.TypePresentation {
           innerTypeText(FunctionType(retType, params.map(_.paramType)), needDotType)
         case _ => ""//todo
       }
-    }
 
     innerTypeText(t)
   }
