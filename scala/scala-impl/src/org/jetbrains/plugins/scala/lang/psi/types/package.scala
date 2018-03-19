@@ -1,9 +1,12 @@
 package org.jetbrains.plugins.scala.lang.psi
 
-import com.intellij.psi.{PsiClass, PsiNamedElement, PsiType, PsiTypeParameter}
+import com.intellij.psi._
+import org.jetbrains.plugins.scala.extensions._
+import org.jetbrains.plugins.scala.lang.psi.api.base.types.ScSimpleTypeElement
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAliasDefinition
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.TypeParamIdOwner
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScTrait}
+import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory
 import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation.shouldExpand
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScDesignatorType, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameterType, _}
@@ -14,8 +17,8 @@ import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScTypeUtil.AliasType
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
 import org.jetbrains.plugins.scala.project.ProjectContext
+import org.jetbrains.plugins.scala.util.ScEquivalenceUtil
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil.areClassesEquivalent
-import org.jetbrains.plugins.scala.extensions._
 
 import scala.util.control.NoStackTrace
 /**
@@ -281,31 +284,25 @@ package object types {
 
   private object RecursionException extends NoStackTrace
   
-  object SymbolicDesignator {
-    sealed trait Associativity
-    
-    object Associativity {
-      final case object Left extends Associativity
-      final case object Right extends Associativity
-      
-      def apply(name: String): Associativity = 
-        if (name.endsWith(":")) Right
-        else                    Left
-    }
-    
-    def unapply(tpe: ScType): Option[Associativity] = tpe.extractDesignated(false).collect {
-      case e @ (_: ScTypeAliasDefinition | _: ScClass | _: ScTrait) if ScalaNamesUtil.isOperatorName(e.name) => 
-        Associativity(e.getName)
-    }
+  trait TypePresentationContext {
+    def nameResolvesTo(name: String, target: PsiElement): Boolean
   }
   
-  object InfixSymbolicParameterizedType {
-    import SymbolicDesignator._
+  object TypePresentationContext {
+    import scala.language.implicitConversions
     
-    def unapply(tpe: ScParameterizedType): Option[(ScType, (ScType, ScType), Associativity)] = tpe match {
-      case ScParameterizedType(des @ SymbolicDesignator(assoc), Seq(arg1, arg2)) =>
-        Some((des, (arg1, arg2), assoc))
-      case _ => None
+    implicit def psiElementPresentationContext(e: PsiElement): TypePresentationContext = (text, target) => {
+      val typeElem = ScalaPsiElementFactory.createTypeElementFromText(text, target.getContext, target)
+
+      val reference = (typeElem match {
+        case null                         => None
+        case ScSimpleTypeElement(Some(r)) => Some(r)
+        case _                            => None
+      }).flatMap(_.resolve.toOption)
+
+      reference.exists(ScEquivalenceUtil.smartEquivalence(_, target))
     }
+    
+    implicit val emptyContext: TypePresentationContext = (_, _) => false
   }
 }

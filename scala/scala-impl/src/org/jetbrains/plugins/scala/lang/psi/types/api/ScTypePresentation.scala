@@ -10,12 +10,14 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScMember, ScOb
 import org.jetbrains.plugins.scala.lang.psi.light.scala.ScLightTypeAliasDefinition
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScTypeExt}
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
+import org.jetbrains.plugins.scala.lang.psi.types.TypePresentationContext
 
 /**
   * @author adkozlov
   */
 trait TypePresentation {
-  final def presentableText(`type`: ScType, withPrefix: Boolean = true): String = typeText(`type`, {
+  final def presentableText(`type`: ScType, withPrefix: Boolean = true)
+                           (implicit context: TypePresentationContext): String = typeText(`type`, {
     case c: PsiClass if withPrefix => ScalaPsiUtil.nameWithPrefixIfNeeded(c)
     case e => e.name
   }, {
@@ -61,12 +63,13 @@ trait TypePresentation {
           }
       }) + (if (withPoint) "." else "")
     }
-    typeText(`type`, nameFun(_, withPoint = false), nameFun(_, withPoint = true))
+    typeText(`type`, nameFun(_, withPoint = false), nameFun(_, withPoint = true))(TypePresentationContext.emptyContext)
   }
 
   protected def typeText(`type`: ScType,
                          nameFun: PsiNamedElement => String,
-                         nameWithPointFun: PsiNamedElement => String): String
+                         nameWithPointFun: PsiNamedElement => String)
+                        (implicit context: TypePresentationContext): String
 }
 
 object ScTypePresentation {

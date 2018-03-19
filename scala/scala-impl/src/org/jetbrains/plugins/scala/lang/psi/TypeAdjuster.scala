@@ -83,6 +83,7 @@ object TypeAdjuster extends ApplicationAdapter {
     val infos = typeElements.map(ReplacementInfo.initial)
     infos.flatMap(simplify)
       .map(shortenReference(_, useTypeAliases))
+      .map(rewriteAsInfixType)
   }
 
   private val toReplaceKey: Key[String] = Key.create[String]("type.element.to.replace")
@@ -235,6 +236,37 @@ object TypeAdjuster extends ApplicationAdapter {
       case _ => info
     }
   }
+  
+  private val infixRewriteKey = Key.create[Int]("type.element.to.rewrite.as.infix")
+  
+  private def rewriteAsInfixType(info: ReplacementInfo): ReplacementInfo = {
+    def markToRewrite(e: PsiElement): Unit = e.putUserData(infixRewriteKey, 1)
+    
+    def canBeInfix(te: ScTypeElement): Boolean = te match {
+      case ScSimpleTypeElement(Some(ref)) => 
+        ScalaNamesUtil.isOperatorName(ref.refName) &&
+          typeNameAlreadyResolvesTo(ref.refName, info.origElement, ref.resolve.toOption).getOrElse(false)
+    }
+    
+    def isChildOfInfixType(e: PsiElement): Boolean =
+      e.parentsInFile.filterByType[ScParameterizedTypeElement].exists(_.getUserData(infixRewriteKey) == 1)
+    
+    def rewriteAsInfix(info: SimpleInfo): ReplacementInfo = info.origElement match {
+      case e @ ScParameterizedTypeElement(des, Seq(_, _)) if canBeInfix(des) =>
+        info.checkReplacementResolve
+        markToRewrite(info.origElement)
+        val newTypeText = e.calcType.presentableText((_, _) => true)
+        info.withNewText(newTypeText)
+      case _ => info
+    }
+
+    info match {
+      case _ if isChildOfInfixType(info.origElement) => info
+      case comp: CompoundInfo                        => comp.copy(childInfos = comp.childInfos.map(rewriteAsInfixType))
+      case simple: SimpleInfo                        => rewriteAsInfix(simple)
+      case _                                         => info
+    }
+  }
 
   private def collectImportHolders(rInfos: Set[ReplacementInfo]): Map[ReplacementInfo, ScImportsHolder] = {
     def findMaxHolders(infos: Set[ReplacementInfo]): Set[(ReplacementInfo, ScImportsHolder)] = {
@@ -312,6 +344,21 @@ object TypeAdjuster extends ApplicationAdapter {
       case p: ScParameterizedTypeElement => p
     }.toVector
   }
+  
+  private def typeNameAlreadyResolvesTo(name: String, context: PsiElement, target: Option[PsiElement]): Option[Boolean] = {
+    def equivalent(left: PsiNamedElement, right: PsiNamedElement): Boolean =
+      ScEquivalenceUtil.smartEquivalence(left, right) ||
+        ScDesignatorType(left).equiv(ScDesignatorType(right))
+
+    val ref = newRef(name, context)
+      .flatMap(reference => Option(reference.resolve()))
+
+    (ref, target) match {
+      case (Some(e1: PsiNamedElement), Some(e2: PsiNamedElement)) => Some(equivalent(e1, e2))
+      case (Some(_), _)                                           => Some(false)
+      case _                                                      => None
+    }
+  }
 
   private trait ReplacementInfo {
     def origElement: PsiElement
@@ -367,22 +414,8 @@ object TypeAdjuster extends ApplicationAdapter {
 
     private def resolvesRight(refText: String): Boolean = alreadyResolves(refText).getOrElse(false)
     private def resolvesWrong(refText: String): Boolean = alreadyResolves(refText).contains(false)
-
-    private def alreadyResolves(refText: String): Option[Boolean] = {
-      def equivalent(left: PsiNamedElement, right: PsiNamedElement): Boolean =
-        ScEquivalenceUtil.smartEquivalence(left, right) ||
-          ScDesignatorType(left).equiv(ScDesignatorType(right))
-
-      val ref = newRef(refText, origElement)
-        .flatMap(reference => Option(reference.resolve()))
-
-      (ref, resolve) match {
-        case (Some(e1: PsiNamedElement), Some(e2: PsiNamedElement)) =>
-          Some(equivalent(e1, e2))
-        case (Some(_), _) => Some(false)
-        case _ => None
-      }
-    }
+    
+    private def alreadyResolves(refText: String): Option[Boolean] = typeNameAlreadyResolvesTo(refText, origElement, resolve)
 
     private def needPrefix(c: PsiClass) = {
       val fromSettings = ScalaCodeStyleSettings.getInstance(origElement.getProject).hasImportWithPrefix(c.qualifiedName)
