@@ -1,21 +1,20 @@
 package org.jetbrains.plugin.scala.compilerReferences
 
 import java.io._
-import java.util.Scanner
 
-import scala.util.Try
-
+import com.intellij.openapi.util.io.DataInputOutputUtilRt.readSeq
 import org.jetbrains.jps.incremental.CompiledClass
 import org.jetbrains.jps.incremental.scala.local.LazyCompiledClass
 
+import scala.collection.JavaConverters._
+import scala.util.Try
+
 trait Codec[T] {
   def encode(t: T): String
-  def decode(in: Scanner): Option[T]
+  def decode(in: DataInput): Option[T]
 }
 
 object Codec {
-  private[this] val delimiter = "\u0000"
-
   def apply[T](implicit codec: Codec[T]): Codec[T] = codec
 
   implicit class CodecOps[T: Codec](val t: T) {
@@ -24,83 +23,42 @@ object Codec {
 
   implicit class StringCodecOps(val s: String) extends AnyVal {
     def decode[T: Codec]: Option[T] =
-      Codec[T].decode(new Scanner(s))
+      Codec[T].decode(new DataInputStream(new ByteArrayInputStream(s.getBytes())))
   }
 
-  def partialCodec[T](decoder: Scanner => T): Codec[T] = new Codec[T] {
-    override def encode(t: T): String           = t.toString
-    override def decode(in: Scanner): Option[T] = Try(decoder(in)).toOption
+  def partialCodec[T](decoder: DataInput => T): Codec[T] = new Codec[T] {
+    override def encode(t: T): String = t.toString
+    override def decode(in: DataInput): Option[T] = Try(decoder(in)).toOption
   }
 
-  implicit val stringCodec: Codec[String]   = partialCodec(_.next())
-  implicit val booleanCodec: Codec[Boolean] = partialCodec(_.next().toBoolean)
-  implicit val longCodec: Codec[Long]       = partialCodec(_.next().toLong)
-  implicit val intCodec: Codec[Int]         = partialCodec(_.next().toInt)
+  implicit val stringCodec: Codec[String] = partialCodec(_.readUTF())
+  implicit val booleanCodec: Codec[Boolean] = partialCodec(_.readBoolean())
+  implicit val longCodec: Codec[Long] = partialCodec(_.readLong)
+  implicit val intCodec: Codec[Int] = partialCodec(_.readInt())
 
-  implicit def traversableCodec[T, R <: Traversable[T]](
-    reify: TraversableOnce[T] => R
-  )(implicit codecT: Codec[T]): Codec[R] =
-    new Codec[R] {
-      override def encode(t: R): String = {
-        val length = intCodec.encode(t.size)
+  implicit def seqCodec[T](implicit codecT: Codec[T]): Codec[Seq[T]] =
+    new Codec[Seq[T]] {
+      override def encode(t: Seq[T]): String = {
         val elements = t.map(codecT.encode)
-        length + (if (elements.nonEmpty) elements.mkString(delimiter, delimiter, "") else "")
+        val baos     = new ByteArrayOutputStream()
+        val out      = new DataOutputStream(baos)
+        out.writeInt(elements.length)
+        elements.foreach(out.writeUTF)
+        baos.toString
       }
 
-      override def decode(in: Scanner): Option[R] = {
-        in.useDelimiter(delimiter)
-        for {
-          length <- intCodec.decode(in)
-        } yield reify((1 to length).flatMap(_ => codecT.decode(in)))
-      }
+      override def decode(in: DataInput): Option[R] =
+        Try(readSeq[T](in, () => in.readUTF().decode[T].get).asScala).flatMap(fromSeq).toOption
     }
 
-  implicit def seqCodec[T: Codec]: Codec[Seq[T]] = traversableCodec[T, Seq[T]](_.toSeq)
-  implicit def setCodec[T: Codec]: Codec[Set[T]] = traversableCodec[T, Set[T]](_.toSet)
+  implicit val compiledClassInfoCodec: Codec[CompiledClass] = seqLikeCodec(){
+    private[this] val seqCodec = Codec[Seq[String]]
 
-  implicit val compiledClassInfoCodec: Codec[CompiledClass] = new Codec[CompiledClass] {
     override def encode(t: CompiledClass): String =
-      Seq(t.getOutputFile.getPath, t.getSourceFile.getPath, t.getClassName).mkString(delimiter)
+      seqCodec.encode(Seq(t.getOutputFile.getPath, t.getSourceFile.getPath, t.getClassName))
 
-    override def decode(in: Scanner): Option[CompiledClass] = {
-      in.useDelimiter(delimiter)
-      for {
-        output <- stringCodec.decode(in)
-        source <- stringCodec.decode(in)
-        name   <- stringCodec.decode(in)
-      } yield new LazyCompiledClass(new File(output), new File(source), name)
-    }
-  }
-
-  implicit val buildDataCodec: Codec[BuildData] = new Codec[BuildData] {
-    private[this] val stringSeqCodec = Codec[Seq[String]]
-    private[this] val classesCodec   = Codec[Seq[CompiledClass]]
-
-    override def encode(t: BuildData): String =
-      Seq(
-        t.timeStamp.encode,
-        t.compiledClasses.encode,
-        t.removedSources.encode,
-        t.affectedModules.encode,
-        t.isRebuild.encode
-      ).mkString(delimiter)
-
-    override def decode(in: Scanner): Option[BuildData] = {
-      in.useDelimiter(delimiter)
-      for {
-        timeStamp       <- longCodec.decode(in)
-        compiledClasses <- classesCodec.decode(in)
-        removedSources  <- stringSeqCodec.decode(in)
-        affectedModules <- stringSeqCodec.decode(in)
-        isRebuild       <- booleanCodec.decode(in)
-      } yield
-        BuildData(
-          timeStamp,
-          compiledClasses.toSet,
-          removedSources.toSet,
-          affectedModules.toSet,
-          isRebuild
-        )
+    override def decode(in: DataInput): Option[CompiledClass] = seqCodec.decode(in).collect {
+      case Seq(output, source, name) => new LazyCompiledClass(new File(output), new File(source), name)
     }
   }
 }
