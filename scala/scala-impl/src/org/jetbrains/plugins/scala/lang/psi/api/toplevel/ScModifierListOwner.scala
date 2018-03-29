@@ -26,7 +26,7 @@ trait ScModifierListOwner extends ScalaPsiElement with ScAnnotationsHolder with 
   }
 
   def isPrivateThis: Boolean =
-    getModifierList.accessModifier.forall(m => m.isPrivate && m.isThis)
+    getModifierList.accessModifier.exists(m => m.isPrivate && m.isThis)
 
   override def hasAnnotation(fqn: String): Boolean = super[ScAnnotationsHolder].hasAnnotation(fqn)
 
