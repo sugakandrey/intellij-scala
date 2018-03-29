@@ -6,7 +6,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.{PsiElement, PsiFile, PsiWhiteSpace}
 import org.jetbrains.plugins.scala.extensions.PsiElementExt
-import org.jetbrains.plugins.scala.highlighter.usages.ScalaHighlightImplicitUsagesHandler.TargetKind
+import org.jetbrains.plugins.scala.highlighter.usages.ScalaHighlightImplicitUsagesHandler.ImplicitTargetProvider
 import org.jetbrains.plugins.scala.highlighter.usages.ScalaHighlightUsagesHandlerFactory.implicitHighlightingEnabled
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
@@ -23,7 +23,6 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTemplateDefin
  * User: Alexander Podkhalyuzin
  * Date: 22.12.2009
  */
-
 class ScalaHighlightUsagesHandlerFactory extends HighlightUsagesHandlerFactory {
   def createHighlightUsagesHandler(editor: Editor, file: PsiFile): HighlightUsagesHandlerBase[_ <: PsiElement] = {
     if (!file.isInstanceOf[ScalaFile]) return null
@@ -120,12 +119,11 @@ class ScalaHighlightUsagesHandlerFactory extends HighlightUsagesHandlerFactory {
     null
   }
 
-  private def implicitHighlighter[T](editor: Editor, file: PsiFile, data: T)
-                            (implicit kind: TargetKind[T]): ScalaHighlightImplicitUsagesHandler[T] = {
-
+  private def implicitHighlighter[T: ImplicitTargetProvider](editor: Editor,
+                                                             file: PsiFile,
+                                                             data: T): ScalaHighlightImplicitUsagesHandler[T] =
     if (implicitHighlightingEnabled.get()) new ScalaHighlightImplicitUsagesHandler(editor, file, data)
     else null
-  }
 
 }
 
