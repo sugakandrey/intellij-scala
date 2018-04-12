@@ -90,9 +90,12 @@ object ImplicitUtil {
       case _                                                => simpleRange
     }
   }
+  
+  private def relativeRangeInElement(usage: PsiElement): TextRange = 
+    range(usage).shiftLeft(usage.getTextRange.getStartOffset)
 
   final case class ImplicitReference(e: PsiElement, targetImplicit: PsiElement)
-      extends PsiReferenceBase[PsiElement](e, range(e), false) {
+      extends PsiReferenceBase[PsiElement](e, relativeRangeInElement(e), false) {
     override def resolve(): PsiElement = targetImplicit
     override def getVariants: Array[AnyRef] = Array.empty
   }
