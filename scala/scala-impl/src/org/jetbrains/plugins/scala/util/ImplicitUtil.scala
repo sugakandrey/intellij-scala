@@ -90,7 +90,7 @@ object ImplicitUtil {
       case _                                                => simpleRange
     }
   }
-  
+
   private def relativeRangeInElement(usage: PsiElement): TextRange = 
     range(usage).shiftLeft(usage.getTextRange.getStartOffset)
 
