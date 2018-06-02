@@ -10,10 +10,10 @@ import org.jetbrains.plugins.scala.decompiler.scalasig.{Parser, ScalaDecompilerE
 import scala.reflect.internal.pickling.ByteCodecs
 
 object Decompiler {
-  private val SCALA_SIG = "ScalaSig"
-  private val SCALA_SIG_ANNOTATION = "Lscala/reflect/ScalaSignature;"
-  private val SCALA_LONG_SIG_ANNOTATION = "Lscala/reflect/ScalaLongSignature;"
-  private val BYTES_VALUE = "bytes"
+  private val SCALA_SIG                 = "ScalaSig"
+  val BYTES_VALUE                       = "bytes"
+  val SCALA_SIG_ANNOTATION: String      = "Lscala/reflect/ScalaSignature;"
+  val SCALA_LONG_SIG_ANNOTATION: String = "Lscala/reflect/ScalaLongSignature;"
 
   private val scalaSigBytes = SCALA_SIG.getBytes(StandardCharsets.UTF_8)
 
