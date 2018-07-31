@@ -318,4 +318,13 @@ class OverridingAnnotatorTest extends OverridingAnnotatorTestBase {
           |}
         """.stripMargin))
   }
+
+  def testSCL14152(): Unit =
+    assertNothing(
+      messages(
+        """trait Foo { def xs: Seq[Int] }
+          |class Bar(override val xs: Int*) extends Foo
+        """.stripMargin
+      )
+    )
 }

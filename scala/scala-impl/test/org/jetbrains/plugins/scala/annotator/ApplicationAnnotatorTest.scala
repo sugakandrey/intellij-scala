@@ -13,17 +13,17 @@ class ApplicationAnnotatorTest extends ApplicationAnnotatorTestBase {
       case Nil =>
     }
   }
-  
+
   def testFine() {
     assertMatches(messages("def f(p: Any) {}; f(null)")) {
       case Nil =>
     }
   }
- 
+
   def testDoesNotTakeParameters() {
     assertMatches(messages("def f {}; f(Unit, null)")) {
       case Error("(Unit, null)", "f does not take parameters") :: Nil =>
-    }    
+    }
   }
 
   def testMissedParametersClause() {
@@ -31,7 +31,7 @@ class ApplicationAnnotatorTest extends ApplicationAnnotatorTestBase {
       case Error("f", "Missing arguments for method f(Any, Any)") :: Nil =>
     }
   }
-  
+
   def testExcessArguments() {
     assertMatches(messages("def f() {}; f(null, Unit)")) {
       case Error("null", "Too many arguments for method f") ::
@@ -44,43 +44,43 @@ class ApplicationAnnotatorTest extends ApplicationAnnotatorTestBase {
       case Error("()", "Unspecified value parameters: a: Any, b: Any") ::Nil =>
     }
   }
-  
+
   def testPositionalAfterNamed() {
     assertMatches(messages("def f(a: Any, b: Any, c: Any) {}; f(c = null, null, Unit)")) {
-      case Error("null", "Positional after named argument") :: 
+      case Error("null", "Positional after named argument") ::
               Error("Unit", "Positional after named argument") :: Nil =>
     }
   }
-  
+
   def testNamedDuplicates() {
     assertMatches(messages("def f(a: Any) {}; f(a = null, a = Unit)")) {
-      case Error("a", "Parameter specified multiple times") :: 
+      case Error("a", "Parameter specified multiple times") ::
               Error("a", "Parameter specified multiple times") :: Nil =>
     }
   }
-  
+
   def testUnresolvedParameter() {
     assertMatches(messages("def f(a: Any) {}; f(b = null)")) {
       case Nil =>
     }
   }
-  
+
   def testTypeMismatch() {
     assertMatches(messages("def f(a: A, b: B) {}; f(B, A)")) {
       case Error("B", "Type mismatch, expected: A, actual: B.type") ::
               Error("A", "Type mismatch, expected: B, actual: A.type") ::Nil =>
     }
   }
-  
+
   def testMalformedSignature() {
     assertMatches(messages("def f(a: A*, b: B) {}; f(A, B)")) {
       case Error("f", "f has malformed definition") :: Nil =>
     }
   }
-  
+
   def testIncorrectExpansion() {
     assertMatches(messages("def f(a: Any, b: Any) {}; f(Seq(null): _*, Seq(null): _*)")) {
-      case Error("Seq(null): _*", "Expansion for non-repeated parameter") :: 
+      case Error("Seq(null): _*", "Expansion for non-repeated parameter") ::
               Error("Seq(null): _*", "Expansion for non-repeated parameter") :: Nil =>
     }
   }
@@ -151,5 +151,22 @@ class ApplicationAnnotatorTest extends ApplicationAnnotatorTestBase {
         |}
       """.stripMargin
     assert(messages(code).isEmpty)
+  }
+
+  def testSCL12708(): Unit = {
+    val code =
+      s"""
+         |trait T
+         |case object V extends T
+         |
+         |case class Clz(exprs: T*)
+         |
+         |def create[P](args: Seq[T], creator: (T*) => Clz) = {
+         |  creator(args :_*)
+         |}
+         |
+         |create[Clz](Seq(V,  V, V), Clz.apply)
+      """.stripMargin
+    assertNothing(messages(code))
   }
 }

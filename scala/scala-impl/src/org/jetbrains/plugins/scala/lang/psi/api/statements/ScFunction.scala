@@ -461,6 +461,7 @@ trait ScFunction extends ScalaPsiElement with ScMember with ScTypeParametersOwne
           res match {
             case Right(t) =>
               val parameters = paramClauses.apply(i).effectiveParameters
+//              val paramTypes = parameters.map(_.getRealParameterType.getOrNothing)
               val paramTypes = parameters.map(_.`type`().getOrNothing)
               res = Right(FunctionType(t, paramTypes))
             case _ =>
