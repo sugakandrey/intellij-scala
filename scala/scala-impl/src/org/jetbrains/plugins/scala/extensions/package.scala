@@ -303,7 +303,7 @@ package object extensions {
         case e: ScFunction => e.returnType.toOption
         case e: ScBindingPattern => e.`type`().toOption
         case e: ScFieldId => e.`type`().toOption
-        case e: ScParameter => e.getRealParameterType.toOption
+        case e: ScParameter => e.`type`().toOption
         case e: PsiMethod if e.isConstructor => None
         case e: PsiMethod => lift(e.getReturnType)
         case e: PsiVariable => lift(e.getType)
@@ -858,7 +858,9 @@ package object extensions {
 
     def paramType(exact: Boolean = true, treatJavaObjectAsAny: Boolean = true): ScType = param match {
       case parameter: FakePsiParameter => parameter.parameter.paramType
-      case parameter: ScParameter => parameter.`type`().getOrAny
+      case parameter: ScParameter =>
+        if (exact && param.isVarArgs) parameter.getComponentType.getOrAny
+        else parameter.`type`().getOrAny
       case _ =>
         val paramType = param.getType match {
           case arrayType: PsiArrayType if exact && param.isVarArgs =>

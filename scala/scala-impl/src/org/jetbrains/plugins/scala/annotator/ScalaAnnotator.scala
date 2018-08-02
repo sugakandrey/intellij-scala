@@ -930,7 +930,7 @@ abstract class ScalaAnnotator extends Annotator
               }
             case param: ScParameter =>
               if (!param.isDefaultParam) return //performance optimization
-              param.getRealParameterType match {
+              param.`type`() match {
                 case Right(paramType) if paramType.extractClass.isDefined =>
                 //do not check generic types. See SCL-3508
                 case _ => return

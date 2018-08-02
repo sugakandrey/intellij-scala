@@ -68,7 +68,7 @@ object SideEffectsUtil {
             case _: ScObject => false
             case p: ScParameter
               if !p.isCallByNameParameter &&
-                !FunctionType.isFunctionType(p.getRealParameterType.getOrAny) => true
+                !FunctionType.isFunctionType(p.`type`().getOrAny) => true
             case _: ScSyntheticFunction => true
             case m: PsiMethod => methodHasNoSideEffects(m, ref.qualifier.flatMap(_.`type`().toOption))
             case _ => false

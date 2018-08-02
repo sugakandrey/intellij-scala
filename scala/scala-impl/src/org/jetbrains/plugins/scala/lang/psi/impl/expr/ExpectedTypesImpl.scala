@@ -448,7 +448,7 @@ class ExpectedTypesImpl extends ExpectedTypes {
         else paramTypeForNamed(assign, params).getOrElse(findByIdx(params))
       }
       case typedStmt: ScTypedStmt if typedStmt.isSequenceArg && params.nonEmpty =>
-        paramTypeForRepeated(params)
+        Option((params.last.paramType, None))
       case _ =>
         Some(findByIdx(params))
     }
@@ -477,13 +477,6 @@ class ExpectedTypesImpl extends ExpectedTypes {
           .find(parameter => ScalaNamesUtil.equivalent(parameter.name, ref.refName))
           .map (param => (param.paramType, typeElem(param)))
       case _ => None
-    }
-  }
-
-  private def paramTypeForRepeated(params: Seq[Parameter])(implicit elementScope: ElementScope): Option[ParameterType] = {
-    val seqClass = elementScope.getCachedClass("scala.collection.Seq")
-    seqClass.map { seq =>
-      (ScParameterizedType(ScalaType.designator(seq), Seq(params.last.paramType)), None)
     }
   }
 

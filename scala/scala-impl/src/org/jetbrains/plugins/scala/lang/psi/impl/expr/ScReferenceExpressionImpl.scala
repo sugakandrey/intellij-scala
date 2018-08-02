@@ -348,7 +348,7 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceElementImpl(no
               case function: ScFunction if PsiTreeUtil.isContextAncestor(function, this, true) &&
                 isMethodDependent(function) => ScalaType.designator(param)
               case _ =>
-                val result = param.getRealParameterType
+                val result = param.`type`()
                 s.subst(result match {
                   case Right(tp) => tp
                   case _ => return result
@@ -363,16 +363,10 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceElementImpl(no
         fun.polymorphicType(s).updateTypeOfDynamicCall(result.isDynamic)
       case ScalaResolveResult(param: ScParameter, s) if param.isRepeatedParameter =>
         val result = param.`type`()
-        val computeType = s.subst(result match {
+        s.subst(result match {
           case Right(tp) => tp
           case _ => return result
         })
-        elementScope.getCachedClass("scala.collection.Seq")
-          .map {
-            ScalaType.designator
-          }.map {
-          ScParameterizedType(_, Seq(computeType))
-        }.getOrElse(computeType)
       case ScalaResolveResult(obj: ScObject, _) =>
         def tail = {
           fromType match {

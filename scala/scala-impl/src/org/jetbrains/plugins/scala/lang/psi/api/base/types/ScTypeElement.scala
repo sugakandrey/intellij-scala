@@ -6,6 +6,7 @@ package base
 package types
 
 import org.jetbrains.plugins.scala.extensions.{PsiElementExt, ifReadAllowed}
+import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScTypeParam
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory._
 import org.jetbrains.plugins.scala.lang.psi.types._
@@ -24,7 +25,12 @@ trait ScTypeElement extends ScalaPsiElement with Typeable {
     s"$typeName: $text"
   }
 
-  def `type`(): TypeResult = getType
+  def `type`(): TypeResult = {
+    val tpe = getType
+
+    if (isRepeated) tpe.map(_.tryWrapIntoSeqType)
+    else tpe
+  }
 
   @CachedWithRecursionGuard(this, Failure("Recursive type of type element"),
     ModCount.getBlockModificationCount)
@@ -62,6 +68,11 @@ trait ScTypeElement extends ScalaPsiElement with Typeable {
 
   @volatile
   private[this] var _analog: Option[ScTypeElement] = None
+
+   def isRepeated: Boolean =
+     Option(getNextSibling)
+       .map(_.getNode)
+       .exists(node => node.getElementType == ScalaTokenTypes.tIDENTIFIER && node.getText == "*")
 }
 
 object ScTypeElement {

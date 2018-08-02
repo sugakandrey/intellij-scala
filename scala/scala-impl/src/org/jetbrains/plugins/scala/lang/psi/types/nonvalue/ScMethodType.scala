@@ -98,18 +98,8 @@ case class ScMethodType(returnType: ScType, params: Seq[Parameter], isImplicit: 
 
   override def typeDepth: Int = returnType.typeDepth
 
-  def inferValueType: ValueType = {
-    FunctionType(returnType.inferValueType, params.map(p => {
-      val inferredParamType = p.paramType.inferValueType
-      if (!p.isRepeated) inferredParamType
-      else {
-        val seqClass = elementScope.getCachedClass("scala.collection.Seq")
-        seqClass.fold(inferredParamType) { inferred =>
-          ScParameterizedType(ScDesignatorType(inferred), Seq(inferredParamType))
-        }
-      }
-    }))
-  }
+  def inferValueType: ValueType =
+    FunctionType(returnType.inferValueType, params.map(_.paramType.inferValueType))
 
   override def removeAbstracts = ScMethodType(returnType.removeAbstracts,
     params.map(p => p.copy(paramType = p.paramType.removeAbstracts)),

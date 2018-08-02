@@ -128,7 +128,7 @@ class ScalaLookupItem(val element: PsiNamedElement, _name: String, containingCla
         case alias: ScTypeAliasDefinition =>
           presentationString(alias.aliasedType.getOrAny, substitutor)
         case param: ScParameter =>
-          presentationString(param.getRealParameterType.getOrAny, substitutor)
+          presentationString(param.`type`().getOrAny, substitutor)
         case t: ScTemplateDefinition if name == "this" || name.endsWith(".this") =>
           t.getTypeWithProjections(thisProjections = true) match {
             case Right(tp) =>

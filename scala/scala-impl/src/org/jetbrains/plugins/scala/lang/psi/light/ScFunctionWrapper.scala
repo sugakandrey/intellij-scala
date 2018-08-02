@@ -237,9 +237,7 @@ object ScFunctionWrapper {
     val paramAnnotations = JavaConversionUtil.annotations(param).mkString(" ")
     val varargs: Boolean = param.isRepeatedParameter && isJavaVarargs
 
-    val paramType =
-      if (varargs) param.`type`()
-      else param.getRealParameterType
+    val paramType = param.`type`()
 
     val typeText = paramType.map(subst.subst) match {
       case Right(tp) if param.isCallByNameParameter =>

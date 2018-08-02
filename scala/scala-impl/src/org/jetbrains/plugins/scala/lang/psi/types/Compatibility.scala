@@ -182,7 +182,7 @@ object Compatibility {
     val clashedAssignments = clashedAssignmentsIn(exprs)
 
     if(clashedAssignments.nonEmpty) {
-      val problems = clashedAssignments.map(ParameterSpecifiedMultipleTimes(_))
+      val problems = clashedAssignments.map(ParameterSpecifiedMultipleTimes)
       return ConformanceExtResult(problems, undefSubst)
     }
 
@@ -212,63 +212,60 @@ object Compatibility {
     var matched: List[(Parameter, ScExpression, ScType)] = Nil
     var defaultParameterUsed = false
 
-    def doNoNamed(expr: Expression): List[ApplicabilityProblem] = {
-      if (namedMode) {
-        List(PositionalAfterNamedArgument(expr.expr))
+    // for repeated parameters returns their component type (i.e. T for T*),
+    // identity for regular parameter types
+    def applicableParameterTypes(parameter: Parameter, forSequenceArgs: Boolean = false): (ScType, ScType) =
+      if (parameter.isRepeated && !forSequenceArgs)
+        (parameter.paramType.tryUnwrapSeqType, parameter.expectedType.tryUnwrapSeqType)
+      else
+        (parameter.paramType, parameter.expectedType)
+
+    def checkParameterConformance(
+      expr: Expression,
+      param: Parameter,
+      forSequenceArg: Boolean = false
+    ): Option[ApplicabilityProblem] = {
+      val (paramType, expectedType) = applicableParameterTypes(param, forSequenceArg)
+      val typeResult                = expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType))._1
+      typeResult.toOption.flatMap { exprType =>
+        val conforms = exprType.weakConforms(paramType)
+        matched ::= (param, expr.expr, exprType)
+        if (!conforms) Option(TypeMismatch(expr.expr, paramType))
+        else {
+          undefSubst += exprType.conforms(paramType, ScUndefinedSubstitutor(), checkWeak = true)._2
+          None
+        }
       }
+    }
+
+    def doNoNamed(expr: Expression): List[ApplicabilityProblem] = {
+      if (namedMode) List(PositionalAfterNamedArgument(expr.expr))
       else {
         val getIt = used.indexOf(false)
         used(getIt) = true
-        val param: Parameter = parameters(getIt)
-        val paramType = param.paramType
-        val expectedType = param.expectedType
-        val typeResult =
-          expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType))._1
-        typeResult.toOption match {
-          case None => Nil
-          case Some(exprType) =>
-            val conforms = exprType.weakConforms(paramType)
-            matched ::= (param, expr.expr, exprType)
-            if (!conforms) List(TypeMismatch(expr.expr, paramType))
-            else {
-              undefSubst += exprType.conforms(paramType, ScUndefinedSubstitutor(), checkWeak = true)._2
-              List.empty
-            }
-        }
+        val param = parameters(getIt)
+        checkParameterConformance(expr, param).toList
       }
     }
 
     while (k < parameters.length.min(exprs.length)) {
       exprs(k) match {
-        case Expression(expr: ScTypedStmt) if expr.isSequenceArg =>
-          seqTypeFor(expr) match {
-            case Some(seqType) =>
-              val getIt = used.indexOf(false)
-              used(getIt) = true
-              val param: Parameter = parameters(getIt)
+        case e @ Expression(expr: ScTypedStmt) if expr.isSequenceArg =>
+          val getIt = used.indexOf(false)
+          used(getIt) = true
+          val param = parameters(getIt)
 
-              if (!param.isRepeated)
-                problems ::= ExpansionForNonRepeatedParameter(expr)
+          if (!param.isRepeated)
+            problems ::= ExpansionForNonRepeatedParameter(expr)
 
-              val tp = ScParameterizedType(seqType, Seq(param.paramType))
-              val expectedType = ScParameterizedType(seqType, Seq(param.expectedType))
-
-              for (exprType <- expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType)).tr.toOption) {
-                if (exprType.weakConforms(tp)) {
-                  matched ::= (param, expr, exprType)
-                  undefSubst += exprType.conforms(tp, ScUndefinedSubstitutor(), checkWeak = true)._2
-                } else {
-                  return ConformanceExtResult(Seq(TypeMismatch(expr, tp)), undefSubst, defaultParameterUsed, matched)
-                }
-              }
-            case _ =>
-              problems :::= doNoNamed(Expression(expr)).reverse
-          }
-        case Expression(assign@NamedAssignStmt(name)) =>
+          val maybeProblem = checkParameterConformance(e, param, forSequenceArg = true)
+          maybeProblem.foreach(problems ::= _)
+        case Expression(assign @ NamedAssignStmt(name)) =>
           val index = parameters.indexWhere { p =>
             ScalaNamesUtil.equivalent(p.name, name) ||
               p.deprecatedName.exists(ScalaNamesUtil.equivalent(_, name))
           }
+
           if (index == -1 || used(index)) {
             def extractExpression(assign: ScAssignStmt): ScExpression = {
               if (ScUnderScoreSectionUtil.isUnderscoreFunction(assign)) assign
@@ -278,40 +275,24 @@ object Compatibility {
           } else {
             if (!checkNames)
               return ConformanceExtResult(Seq(new ApplicabilityProblem("9")), undefSubst, defaultParameterUsed, matched)
+
             used(index) = true
-            val param: Parameter = parameters(index)
+            val param = parameters(index)
             if (index != k) {
               namedMode = true
             }
 
             assign.getRExpression match {
-              case rightExpression@Some(expr: ScExpression) =>
-                val maybeSeqType = rightExpression.collect {
-                  case typedStmt: ScTypedStmt if typedStmt.isSequenceArg => typedStmt
-                }.flatMap {
-                  seqTypeFor
-                }
+              case rightExpression @ Some(expr: ScExpression) =>
+                val isSeqArg = rightExpression.collect {
+                  case typed: ScTypedStmt => typed.isSequenceArg
+                }.getOrElse(false)
 
-                maybeSeqType.foreach { _ =>
-                  if (!param.isRepeated)
-                    problems ::= ExpansionForNonRepeatedParameter(expr)
-                }
+                if (!param.isRepeated && isSeqArg)
+                  problems ::= ExpansionForNonRepeatedParameter(expr)
 
-                val (paramType, expectedType) = maybeSeqType.map { seqType =>
-                  (ScParameterizedType(seqType, Seq(param.paramType)): ScType,
-                    ScParameterizedType(seqType, Seq(param.expectedType)): ScType)
-                }.getOrElse {
-                  (param.paramType, param.expectedType)
-                }
-
-                for (exprType <- expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType)).tr.toOption) {
-                  if (exprType.weakConforms(paramType)) {
-                    matched ::= (param, expr, exprType)
-                    undefSubst += exprType.conforms(paramType, ScUndefinedSubstitutor(), checkWeak = true)._2
-                  } else {
-                    problems ::= TypeMismatch(expr, paramType)
-                  }
-                }
+                val maybeProblem = checkParameterConformance(Expression(expr), param, isSeqArg)
+                maybeProblem.foreach(problems ::= _)
               case _ =>
                 return ConformanceExtResult(Seq(new ApplicabilityProblem("11")), undefSubst, defaultParameterUsed, matched)
             }
@@ -330,18 +311,11 @@ object Compatibility {
         return ConformanceExtResult(Seq(new ApplicabilityProblem("12")), undefSubst, defaultParameterUsed, matched)
       if (!parameters.last.isRepeated)
         return ConformanceExtResult(Seq(new ApplicabilityProblem("13")), undefSubst, defaultParameterUsed, matched)
-      val paramType: ScType = parameters.last.paramType
-      val expectedType: ScType = parameters.last.expectedType
+      val param = parameters.last
       while (k < exprs.length) {
-        for (exprType <- exprs(k).getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType))._1) {
-          val conforms = exprType.weakConforms(paramType)
-          if (!conforms) {
-            return ConformanceExtResult(Seq(ElementApplicabilityProblem(exprs(k).expr, exprType, paramType)),
-              undefSubst, defaultParameterUsed, matched)
-          } else {
-            matched ::= (parameters.last, exprs(k).expr, exprType)
-            undefSubst += exprType.conforms(paramType, ScUndefinedSubstitutor(), checkWeak = true)._2
-          }
+        val maybeProblem = checkParameterConformance(exprs(k), param)
+        maybeProblem.foreach { problem =>
+          return ConformanceExtResult(Seq(problem), undefSubst, defaultParameterUsed, matched)
         }
         k = k + 1
       }
