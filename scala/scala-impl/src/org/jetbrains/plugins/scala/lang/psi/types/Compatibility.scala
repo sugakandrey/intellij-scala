@@ -212,20 +212,12 @@ object Compatibility {
     var matched: List[(Parameter, ScExpression, ScType)] = Nil
     var defaultParameterUsed = false
 
-    // for repeated parameters returns their component type (i.e. T for T*),
-    // identity for regular parameter types
-    def applicableParameterTypes(parameter: Parameter, forSequenceArgs: Boolean = false): (ScType, ScType) =
-      if (parameter.isRepeated && !forSequenceArgs)
-        (parameter.paramType.tryUnwrapSeqType, parameter.expectedType.tryUnwrapSeqType)
-      else
-        (parameter.paramType, parameter.expectedType)
-
     def checkParameterConformance(
       expr: Expression,
       param: Parameter,
       forSequenceArg: Boolean = false
     ): Option[ApplicabilityProblem] = {
-      val (paramType, expectedType) = applicableParameterTypes(param, forSequenceArg)
+      val (paramType, expectedType) = param.applicableParameterTypes(forSequenceArg)
       val typeResult                = expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType))._1
       typeResult.toOption.flatMap { exprType =>
         val conforms = exprType.weakConforms(paramType)

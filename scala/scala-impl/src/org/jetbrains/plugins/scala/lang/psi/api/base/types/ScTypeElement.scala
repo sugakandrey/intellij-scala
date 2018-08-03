@@ -25,11 +25,18 @@ trait ScTypeElement extends ScalaPsiElement with Typeable {
     s"$typeName: $text"
   }
 
+  abstract override def getText: String = {
+    val baseText = super.getText
+
+    if (isRepeated) s"$baseText*"
+    else            baseText
+  }
+
   def `type`(): TypeResult = {
     val tpe = getType
 
     if (isRepeated) tpe.map(_.tryWrapIntoSeqType)
-    else tpe
+    else            tpe
   }
 
   @CachedWithRecursionGuard(this, Failure("Recursive type of type element"),

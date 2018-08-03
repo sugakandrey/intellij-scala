@@ -432,9 +432,10 @@ class ExpectedTypesImpl extends ExpectedTypes {
   private def paramTypeFromExpr(expr: ScExpression, params: Seq[Parameter], idx: Int, isDynamicNamed: Boolean): Option[ParameterType] = {
     import expr.elementScope
 
-    def findByIdx(params: Seq[Parameter]): ParameterType = {
-      def simple = (params(idx).paramType, typeElem(params(idx)))
-      def repeated = (params.last.paramType, typeElem(params.last))
+    def findByIdx(params: Seq[Parameter], forSequenceArgs: Boolean = false): ParameterType = {
+      def parameterType(param: Parameter): ParameterType = (param.applicableParameterTypes()._1, typeElem(param))
+      def simple                                         = parameterType(params(idx))
+      def repeated                                       = parameterType(params.last)
 
       if (idx >= params.length)
         if (params.nonEmpty && params.last.isRepeated) repeated
@@ -447,10 +448,8 @@ class ExpectedTypesImpl extends ExpectedTypes {
         if (isDynamicNamed) paramTypeForDynamicNamed(findByIdx(params))
         else paramTypeForNamed(assign, params).getOrElse(findByIdx(params))
       }
-      case typedStmt: ScTypedStmt if typedStmt.isSequenceArg && params.nonEmpty =>
-        Option((params.last.paramType, None))
-      case _ =>
-        Some(findByIdx(params))
+      case typedStmt: ScTypedStmt if typedStmt.isSequenceArg => Option(findByIdx(params, forSequenceArgs = true))
+      case _                                                 => Some(findByIdx(params))
     }
   }
 

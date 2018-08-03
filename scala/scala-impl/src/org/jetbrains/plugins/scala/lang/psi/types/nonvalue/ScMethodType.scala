@@ -45,6 +45,14 @@ case class Parameter(name: String,
   def nameInCode: Option[String] = psiParam.map(_.getName)
 
   def isImplicit: Boolean = paramInCode.exists(_.isImplicitParameter)
+
+   // for repeated parameters returns their component type (i.e. T for T*),
+   // identity for regular parameter types
+   def applicableParameterTypes(forSequenceArgs: Boolean = false): (ScType, ScType) =
+     if (isRepeated && !forSequenceArgs)
+       (paramType.tryUnwrapSeqType, expectedType.tryUnwrapSeqType)
+     else
+       (paramType, expectedType)
 }
 
 object Parameter {

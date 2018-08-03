@@ -23,8 +23,9 @@ class ScalacTestdataHighlightingTest extends ScalacTestdataHighlightingTestBase 
   override def filesToHighlight: Array[File] = {
     val testDataPath = TestUtils.getTestDataPath + "/scalacTests/pos/"
 
-    val dir = new File(testDataPath)
-    dir.listFiles()
+//    val dir = new File(testDataPath)
+//    dir.listFiles()
+    Array(new File(testDataPath, "t2698.scala"))
   }
 
   def testScalacTests(): Unit = doTest()
