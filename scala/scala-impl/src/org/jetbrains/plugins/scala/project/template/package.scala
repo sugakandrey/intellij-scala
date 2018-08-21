@@ -1,7 +1,7 @@
 package org.jetbrains.plugins.scala
 package project
 
-import java.io.{Closeable, File, FileWriter, PrintWriter}
+import java.io._
 
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil

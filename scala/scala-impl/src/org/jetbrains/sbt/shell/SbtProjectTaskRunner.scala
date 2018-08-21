@@ -74,7 +74,7 @@ class SbtProjectTaskRunner extends ProjectTaskRunner {
 
     // the "build" button in IDEA always runs the build for all individual modules,
     // and may work differently than just calling the products task from the main module in sbt
-    val moduleCommands = validTasks.flatMap(buildCommands)
+    val moduleCommands = validTasks.map(_.getModule).flatMap(moduleBuildCommand)
     val modules = validTasks.map(_.getModule)
 
     // don't run anything if there's no module to run a build for
@@ -94,16 +94,6 @@ class SbtProjectTaskRunner extends ProjectTaskRunner {
       // run this as a task (which blocks a thread) because it seems non-trivial to just update indicators asynchronously?
       val task = new CommandTask(project, modules.toArray, command, callbackOpt)
       ProgressManager.getInstance().run(task)
-    }
-  }
-
-  private def buildCommands(task: ModuleBuildTask): Seq[String] = {
-    // TODO sensible way to find out what scopes to run it for besides compile and test?
-    // TODO make tasks should be user-configurable
-    SbtUtil.getSbtModuleData(task.getModule).toSeq.flatMap { sbtModuleData =>
-      val scope = SbtUtil.makeSbtProjectId(sbtModuleData)
-      // `products` task is a little more general than just `compile`
-      Seq(s"$scope/products", s"$scope/test:products")
     }
   }
 

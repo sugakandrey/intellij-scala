@@ -128,25 +128,36 @@ class SbtProjectSettingsControl(context: Context, initialSettings: SbtProjectSet
   }
 
   protected def applyExtraSettings(settings: SbtProjectSettings) {
-    val useSbtShellForBuildSettingChanged = 
-      settings.useSbtShellForBuild != useSbtShellForBuildCheckBox.isSelected
-
     settings.jdk = selectedJdkName.orNull
     settings.resolveClassifiers = resolveClassifiersCheckBox.isSelected
     settings.resolveSbtClassifiers = resolveSbtClassifiersCheckBox.isSelected
-    settings.useSbtShellForBuild = useSbtShellForBuildCheckBox.isSelected
     settings.useSbtShellForImport = useSbtShellForImportCheckBox.isSelected
     settings.enableDebugSbtShell = remoteDebugSbtShell.isSelected
     settings.allowSbtVersionOverride = allowSbtVersionOverride.isSelected
     settings.useSbtShell = false
 
+    val useSbtShellForBuildSettingChanged =
+      settings.useSbtShellForBuild != useSbtShellForBuildCheckBox.isSelected
+
     if (useSbtShellForBuildSettingChanged) {
       import scala.util.control.NonFatal
+      import org.jetbrains.plugins.scala.findUsages.compilerReferences.ScalaCompilerReferenceService
 
-      val publisher = getProject.getMessageBus.syncPublisher(SbtShellSettingsListener.topic)
+      val project = getProject
 
-      try publisher.buildWithSbtShellSettingChanged(settings.useSbtShellForBuild)
-      catch { case NonFatal(e) => logger.error(e) }
+      def transaction(body: =>Unit): Unit =
+        if (project != null) ScalaCompilerReferenceService(project).inTransaction(_ => body)
+        else                 body
+
+      // locking here is hardly ideal, but we assume that transactions are very short
+      // and hope for the best
+      transaction {
+        settings.useSbtShellForBuild = useSbtShellForBuildCheckBox.isSelected
+        val publisher = project.getMessageBus.syncPublisher(SbtShellSettingsListener.topic)
+
+        try publisher.buildWithSbtShellSettingChanged(settings.useSbtShellForBuild)
+        catch { case NonFatal(e) => logger.error(e) }
+      }
     }
   }
 
