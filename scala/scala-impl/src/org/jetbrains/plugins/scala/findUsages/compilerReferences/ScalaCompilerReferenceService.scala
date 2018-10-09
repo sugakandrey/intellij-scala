@@ -4,7 +4,7 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import com.intellij.compiler.CompilerReferenceService
-import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase
+import com.intellij.compiler.backwardRefs.{CompilerReferenceServiceBase, DirtyScopeHolder}
 import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase.{IndexCloseReason, IndexOpenReason}
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -146,7 +146,7 @@ private[findUsages] class ScalaCompilerReferenceService(
       }
     }
 
-  override def projectOpened(): Unit = if (CompilerReferenceService.isEnabled) {
+  override def projectOpened(): Unit = if (CompilerIndicesSettings(project).getClassfileIndexingEnabled) {
     val connection = messageBus.connect(project)
 
     //FIXME
@@ -243,6 +243,10 @@ private[findUsages] class ScalaCompilerReferenceService(
 
   // transactions MUST BE SHORT (they are used in UI thread in SbtProjectSettingsControl)
   def inTransaction[T](body: CompilerIndicesState => T): T = transactionManager.inTransaction(body)
+
+  def invalidateIndex(): Unit = onIndexCorruption()
+
+  def dirtyScopeHolder: DirtyScopeHolder = myDirtyScopeHolder
 }
 
 object ScalaCompilerReferenceService {
