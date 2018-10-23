@@ -3,9 +3,8 @@ package org.jetbrains.plugins.scala.findUsages.compilerReferences
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-import com.intellij.compiler.CompilerReferenceService
-import com.intellij.compiler.backwardRefs.{CompilerReferenceServiceBase, DirtyScopeHolder}
 import com.intellij.compiler.backwardRefs.CompilerReferenceServiceBase.{IndexCloseReason, IndexOpenReason}
+import com.intellij.compiler.backwardRefs.DirtyScopeHolder
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtilCore
@@ -35,7 +34,7 @@ private[findUsages] class ScalaCompilerReferenceService(
   project:             Project,
   fileDocumentManager: FileDocumentManager,
   psiDocumentManager:  PsiDocumentManager
-) extends CompilerReferenceServiceBase[ScalaCompilerReferenceReader](
+) extends CompilerReferenceServiceAdapter[ScalaCompilerReferenceReader](
       project,
       fileDocumentManager,
       psiDocumentManager,
@@ -97,10 +96,14 @@ private[findUsages] class ScalaCompilerReferenceService(
         myOpenCloseLock.locked(body((currentCompilerMode, publisher)))
     }
 
+  private[this] def readerSafe: Option[ScalaCompilerReferenceReader] = Option(myReader)
+
   private[this] def onIndexCorruption(): Unit = transactionManager.inTransaction { _ =>
-    indexerScheduler.schedule(InvalidateIndex)
+    val index = readerSafe.map(_.getIndex())
+    indexerScheduler.schedule(InvalidateIndex(index))
     indexerScheduler.schedule(() => {
       logger.warn(s"Compiler indices were corrupted and invalidated.")
+      resetReader()
       myActiveBuilds = 1
       failedToParse.clear()
       myDirtyScopeHolder.upToDateChecked(false)
@@ -140,7 +143,7 @@ private[findUsages] class ScalaCompilerReferenceService(
       failure match {
         case FailedToParse(classes) => failedToParse ++= classes
         case FatalFailure(causes) =>
-          logger.error("Fatal failure occured while trying to build compiler indices.")
+          logger.error(s"Fatal failure occured while trying to build compiler indices. Total failures count: ${causes.size}")
           causes.foreach(logger.error("Indexing failure", _))
           onIndexCorruption()
       }
@@ -194,7 +197,7 @@ private[findUsages] class ScalaCompilerReferenceService(
 
     for {
       info    <- asCompilerElements(target, false, false).toOption
-      reader  <- myReader.toOption
+      reader  <- readerSafe
       targets = info.searchElements
     } yield targets.foreach(usages ++= builder(reader)(_))
 
