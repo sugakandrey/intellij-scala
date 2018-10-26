@@ -149,7 +149,7 @@ private[findUsages] class ScalaCompilerReferenceService(
       }
     }
 
-  override def projectOpened(): Unit = if (CompilerIndicesSettings(project).getClassfileIndexingEnabled) {
+  override def projectOpened(): Unit = if (CompilerIndicesSettings(project).indexingEnabled) {
     val connection = messageBus.connect(project)
 
     //FIXME
