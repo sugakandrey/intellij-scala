@@ -152,11 +152,6 @@ private[findUsages] class ScalaCompilerReferenceService(
   override def projectOpened(): Unit = if (CompilerIndicesSettings(project).indexingEnabled) {
     val connection = messageBus.connect(project)
 
-    //FIXME
-    ProjectManager
-      .getInstance()
-      .addProjectManagerListener(_ != self.project || !isIndexingInProgress)
-
     connection.subscribe(SbtShellSettingsListener.topic, new SbtShellSettingsListener {
       override def buildWithSbtShellSettingChanged(useSbtShell: Boolean): Unit = {
         // IDEA JPS compiler <-> sbt shell change happened
