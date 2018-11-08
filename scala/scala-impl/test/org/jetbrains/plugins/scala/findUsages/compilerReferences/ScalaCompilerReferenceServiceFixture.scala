@@ -1,6 +1,5 @@
 package org.jetbrains.plugins.scala.findUsages.compilerReferences
 
-import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
 
@@ -10,6 +9,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.{CompilerTester, PsiTestUtil}
 import junit.framework.TestCase._
+import org.jetbrains.plugins.scala.project._
 import org.jetbrains.plugins.scala.SlowTests
 import org.jetbrains.plugins.scala.base.libraryLoaders.{LibraryLoader, ScalaSDKLoader}
 import org.jetbrains.plugins.scala.debugger.{ScalaSdkOwner, ScalaVersion, Scala_2_12}
@@ -27,11 +27,11 @@ abstract class ScalaCompilerReferenceServiceFixture extends JavaCodeInsightFixtu
   override implicit protected def module: Module              = myModule
   override protected def librariesLoaders: Seq[LibraryLoader] = Seq(ScalaSDKLoader(includeScalaReflect = true))
 
-  private[this] var compiler: CompilerTester               = _
   private[this] val compilerIndexLock: Lock                = new ReentrantLock()
   private[this] val indexReady: Condition                  = compilerIndexLock.newCondition()
   @volatile private[this] var indexReadyPredicate: Boolean = false
 
+  protected var compiler: CompilerTester = _
   protected lazy val service = ScalaCompilerReferenceService(getProject)
 
   override def setUp(): Unit = {
@@ -39,7 +39,8 @@ abstract class ScalaCompilerReferenceServiceFixture extends JavaCodeInsightFixtu
     try {
       setUpLibraries()
       PsiTestUtil.addSourceRoot(myModule, myFixture.getTempDirFixture.findOrCreateDir("src"), true)
-      compiler = new CompilerTester(getProject, util.Collections.singletonList(myModule))
+      val project = getProject
+      compiler = new CompilerTester(project, project.modules.asJava, project)
     } catch {
       case NonFatal(e) => fail(e.getMessage)
     }
@@ -71,7 +72,8 @@ abstract class ScalaCompilerReferenceServiceFixture extends JavaCodeInsightFixtu
       .foreach(m => assertNotSame(m.getMessage, CompilerMessageCategory.ERROR, m.getCategory))
 
     compilerIndexLock.locked {
-      while (!indexReadyPredicate) indexReady.await(10, TimeUnit.SECONDS)
+      indexReady.await(30, TimeUnit.SECONDS)
+      if (!indexReadyPredicate) fail("Failed to updated compiler index.")
       indexReadyPredicate = false
     }
   }
