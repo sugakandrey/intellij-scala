@@ -6,7 +6,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAliasDefinition
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticClass
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, StdType, arrayType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, StdType, arrayType, PsiTypeBridge, TypeSystem}
 
 import scala.collection.JavaConverters._
 
@@ -14,8 +14,8 @@ import scala.collection.JavaConverters._
 /**
   * @author adkozlov
   */
-trait DottyPsiTypeBridge extends api.PsiTypeBridge {
-  typeSystem: api.TypeSystem =>
+trait DottyPsiTypeBridge extends PsiTypeBridge {
+  typeSystem: TypeSystem =>
 
   override def toScType(`type`: PsiType,
                         treatJavaObjectAsAny: Boolean)

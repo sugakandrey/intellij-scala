@@ -1,13 +1,13 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
 import org.jetbrains.plugins.scala.lang.psi.types._
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, Nothing}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, Bounds, TypeSystem, Nothing}
 
 /**
   * @author adkozlov
   */
-trait DottyBounds extends api.Bounds {
-  typeSystem: api.TypeSystem =>
+trait DottyBounds extends Bounds {
+  typeSystem: TypeSystem =>
 
   override def glb(first: ScType, second: ScType, checkWeak: Boolean): ScType = {
     checkTypes(first, second) match {
