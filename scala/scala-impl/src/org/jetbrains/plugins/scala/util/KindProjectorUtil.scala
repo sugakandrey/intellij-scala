@@ -168,7 +168,7 @@ object KindProjectorUtil {
         val buiderTrait = ScalaPsiElementFactory.createTypeDefinitionWithContext(text, tdef, null)
 
         ScParameterizedType(
-          ScalaType.designator(buiderTrait),
+          ScType.designator(buiderTrait),
           Seq(f.`type`().getOrAny, g.`type`().getOrAny)
         )
       }

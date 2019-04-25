@@ -17,9 +17,9 @@ import scala.collection.mutable
 
 final case class ScCompoundType private (
   components:   Seq[ScType],
-  signatureMap: Map[TermSignature, ScType]          = Map.empty,
+  signatureMap: Map[TermSignature, ScType]      = Map.empty,
   typesMap:     Map[String, TypeAliasSignature] = Map.empty
-)(implicit override val projectContext: ProjectContext) extends ScalaType with ValueType {
+)(implicit override val projectContext: ProjectContext) extends ScType with ValueType {
 
   private var hash: Int = -1
 

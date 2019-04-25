@@ -29,7 +29,7 @@ class ScTypeProjectionImpl(node: ASTNode) extends ScReferenceImpl(node) with ScT
     this.bind() match {
       case Some(ScalaResolveResult(elem, _)) =>
         typeElement.`type`().map {
-          case ScDesignatorType(_: PsiPackage) => ScalaType.designator(elem)
+          case ScDesignatorType(_: PsiPackage) => ScType.designator(elem)
           case t => ScProjectionType(t, elem)
         }
       case _ => Failure("Cannot Resolve reference")

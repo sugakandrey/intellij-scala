@@ -7,22 +7,18 @@ import org.jetbrains.plugins.scala.project.ProjectContextOwner
 /**
   * @author adkozlov
   */
-trait TypeSystem extends ProjectContextOwner
+trait TypeSystem[Tpe <: ScalaType] extends ProjectContextOwner
   with Equivalence
   with Conformance
   with Bounds
   with PsiTypeBridge
-  with TypePresentation {
+  with TypePresentation[Tpe] {
 
   protected case class Key(left: ScType,
                            right: ScType,
                            flag: Boolean)
 
   val name: String
-
-  def andType(types: Seq[ScType]): ScType
-
-  def parameterizedType(designator: ScType, typeArguments: Seq[ScType]): ValueType
 
   override final def clearCache(): Unit = {
     super[Equivalence].clearCache()

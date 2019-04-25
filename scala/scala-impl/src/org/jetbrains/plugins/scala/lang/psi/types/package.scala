@@ -4,7 +4,7 @@ import com.intellij.psi._
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.TypeParamIdOwner
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScTypeAlias, ScTypeAliasDefinition}
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation.shouldExpand
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil.shouldExpand
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScDesignatorType, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameterType, _}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{NonValueType, ScMethodType, ScTypePolymorphicType}
@@ -19,6 +19,15 @@ import scala.util.control.NoStackTrace
   * @author adkozlov
   */
 package object types {
+
+  implicit class ScalaTypeExt(private val tpe: ScalaType) extends AnyVal {
+    def canonicalText: String = tpe.typeSystem.canonicalText(tpe)
+
+    def presentableText(implicit ctx: TypePresentationContext): String =
+      tpe.typeSystem.presentableText(tpe, withPrefix = true)
+
+    def urlText: String = tpe.typeSystem.urlText(tpe)
+  }
 
   implicit class ScTypeExt(val scType: ScType) extends AnyVal {
     private def typeSystem = scType.typeSystem
@@ -231,7 +240,7 @@ package object types {
     def tryWrapIntoSeqType(implicit scope: ElementScope): ScType =
       scope
         .getCachedClass("scala.collection.Seq")
-        .map(ScalaType.designator)
+        .map(ScType.designator)
         .map(ScParameterizedType(_, Seq(scType)))
         .getOrElse(scType)
 

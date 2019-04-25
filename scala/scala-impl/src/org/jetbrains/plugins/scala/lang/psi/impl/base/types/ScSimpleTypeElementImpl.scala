@@ -27,11 +27,12 @@ import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticC
 import org.jetbrains.plugins.scala.lang.psi.types.Compatibility.Expression
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator._
-import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, Nothing, TypeParameter, TypeParameterType, UndefinedType}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{Parameter, ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, Nothing, TypeParameterType, UndefinedType}
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
+import org.jetbrains.plugins.scala.lang.typeInference.{Parameter, TypeParameter}
 import org.jetbrains.plugins.scala.macroAnnotations.{CachedWithRecursionGuard, ModCount}
 
 /**
@@ -372,7 +373,7 @@ object ScSimpleTypeElementImpl {
               case _ => fromType match {
                 case Some(designator@ScDesignatorType(obj: ScObject)) if obj.isPackageObject =>
                   makeProjection(designator)
-                case _ => ScalaType.designator(resolvedElement)
+                case _ => ScType.designator(resolvedElement)
               }
             }
           case _ =>
@@ -394,7 +395,7 @@ object ScSimpleTypeElementImpl {
                 ScThisType(getContextOfType(self, classOf[ScTemplateDefinition]))
               case _ => fromType match {
                 case Some(tp) => makeProjection(tp)
-                case _ => ScalaType.designator(resolvedElement)
+                case _ => ScType.designator(resolvedElement)
               }
             }
             Right(result)

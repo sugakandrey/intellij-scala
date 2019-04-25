@@ -2,8 +2,7 @@ package org.jetbrains.plugins.dotty.lang.core
 package types
 
 import org.jetbrains.plugins.dotty.lang.core.types.api._
-import org.jetbrains.plugins.dotty.lang.psi.types.DottyTypePresentation
-import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
+import org.jetbrains.plugins.dotty.lang.psi.types.{DottyTypePresentation, DottyTypeSystem}
 import org.jetbrains.plugins.scala.lang.psi.types.{ScalaType, TypePresentationContext}
 import org.jetbrains.plugins.scala.lang.typeInference.{DotParameter, DotTypeParameter}
 
@@ -17,13 +16,8 @@ import org.jetbrains.plugins.scala.lang.typeInference.{DotParameter, DotTypePara
   * See also: [[DotProxyType]] and [[DotGroundType]]
   */
 sealed trait DotType extends ScalaType {
-  override def typeSystem: TypeSystem = ???
-
-  override def presentableText(implicit context: TypePresentationContext): String =
-    DottyTypePresentation.presentableText(this, withPrefix = true)
-
-  override def canonicalText: String = DottyTypePresentation.canonicalText(this)
-  override def urlText: String = DottyTypePresentation.urlText(this)
+  override type Self = DotType
+  override def typeSystem: DottyTypeSystem = ???
 }
 
 /**
@@ -136,6 +130,7 @@ class DotTypeBounds(val lo: DotType, val hi: DotType) extends DotTypeBoundsApi w
 }
 
 object DotTypeBounds {
+  def apply(lo: DotType, hi: DotType): DotTypeBounds = new DotTypeBounds(lo, hi)
   def unapply(arg: DotTypeBounds): DotTypeBounds = arg
 }
 

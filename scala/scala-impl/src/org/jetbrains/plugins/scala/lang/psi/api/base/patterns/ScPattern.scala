@@ -133,7 +133,7 @@ object ScPattern {
           }
           case b: ScBlockExpr if b.getContext.isInstanceOf[ScCatchBlock] =>
             val thr = psiManager.getCachedClass(elementScope.scope, "java.lang.Throwable")
-            thr.map(ScalaType.designator(_))
+            thr.map(ScType.designator)
           case b: ScBlockExpr =>
             b.expectedType(fromUnderscore = false) match {
               case Some(et) =>

@@ -11,7 +11,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.expr.ScExpression.ExpressionType
 import org.jetbrains.plugins.scala.lang.psi.api.expr._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScParameter
 import org.jetbrains.plugins.scala.lang.psi.api.{Annotatable, ScalaFile}
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, api}
 
 import scala.annotation.tailrec
@@ -60,15 +60,15 @@ trait ScExpressionAnnotator extends Annotatable { self: ScExpression =>
 
     def shouldNotHighlight(expr: ScExpression): Boolean = expr.getContext match {
       case a: ScAssignment if a.rightExpression.contains(expr) && a.isDynamicNamedAssignment => true
-      case t: ScTypedExpression if t.isSequenceArg                                                => true
-      case param: ScParameter if !param.isDefaultParam                                      => true //performance optimization
-      case param: ScParameter                                                               =>
+      case t: ScTypedExpression if t.isSequenceArg                                           => true
+      case param: ScParameter if !param.isDefaultParam                                       => true //performance optimization
+      case param: ScParameter =>
         param.getRealParameterType match {
           case Right(paramType) if paramType.extractClass.isDefined => false //do not check generic types. See SCL-3508
           case _                                                    => true
         }
-      case ass: ScAssignment if ass.isNamedParameter                                        => true //that's checked in application annotator
-      case _                                                                                => false
+      case ass: ScAssignment if ass.isNamedParameter => true //that's checked in application annotator
+      case _                                         => false
     }
 
     def checkExpressionTypeInner(fromUnderscore: Boolean) {
@@ -107,7 +107,7 @@ trait ScExpressionAnnotator extends Annotatable { self: ScExpression =>
                 case _ => this
               }
 
-              val (exprTypeText, expectedTypeText) = ScTypePresentation.different(exprType.getOrNothing, tp)
+              val (exprTypeText, expectedTypeText) = TypePresentationUtil.different(exprType.getOrNothing, tp)
               val error = ScalaBundle.message("expr.type.does.not.conform.expected.type", exprTypeText, expectedTypeText)
               val annotation: Annotation = holder.createErrorAnnotation(markedPsi, error)
               if (WrapInOptionQuickFix.isAvailable(this, expectedType, exprType)) {

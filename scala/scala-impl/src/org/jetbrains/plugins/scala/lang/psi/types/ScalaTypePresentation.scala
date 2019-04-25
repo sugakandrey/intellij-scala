@@ -4,6 +4,7 @@ package psi
 package types
 
 import com.intellij.psi._
+import org.apache.commons.lang.StringEscapeUtils
 import org.jetbrains.plugins.scala.codeInspection.typeLambdaSimplify.KindProjectorSimplifyTypeProjectionInspection
 import org.jetbrains.plugins.scala.editor.documentationProvider.ScalaDocumentationProvider.parseParameters
 import org.jetbrains.plugins.scala.extensions._
@@ -13,22 +14,73 @@ import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScBindingPattern,
 import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, ScTypeParam}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScObject, ScTypeDefinition}
+import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScMember, ScObject, ScTypeDefinition}
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.refactoring.util.{ScTypeUtil, ScalaNamesUtil}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
 import scala.annotation.tailrec
 
-trait ScalaTypePresentation extends api.TypePresentation {
-  typeSystem: api.TypeSystem =>
+trait ScalaTypePresentation extends TypePresentation[ScType] {
+  self: TypeSystem[ScType] =>
 
   import ScalaTypePresentation._
-  import api.ScTypePresentation._
 
-  protected override def typeText(`type`: ScType, nameFun: PsiNamedElement => String, nameWithPointFun: PsiNamedElement => String)
+  final def presentableText(`type`: ScType, withPrefix: Boolean = true)
+                           (implicit context: TypePresentationContext): String = typeText(`type`, {
+    case c: PsiClass if withPrefix => ScalaPsiUtil.nameWithPrefixIfNeeded(c)
+    case e => e.name
+  }, {
+    case o: ScObject if Set("scala.Predef", "scala").contains(o.qualifiedName) => ""
+    case _: PsiPackage => ""
+    case c: PsiClass => ScalaPsiUtil.nameWithPrefixIfNeeded(c) + "."
+    case e => e.name + "."
+  }
+  )
+
+  final def urlText(`type`: ScType): String = {
+    def nameFun(e: PsiNamedElement, withPoint: Boolean): String = {
+      e match {
+        case o: ScObject if withPoint && o.qualifiedName == "scala.Predef" => ""
+        case e: PsiClass => "<a href=\"psi_element://" + e.qualifiedName + "\"><code>" +
+          StringEscapeUtils.escapeHtml(e.name) +
+          "</code></a>" + (if (withPoint) "." else "")
+        case _: PsiPackage if withPoint => ""
+        case _ => StringEscapeUtils.escapeHtml(e.name) + "."
+      }
+    }
+    typeText(`type`, nameFun(_, withPoint = false), nameFun(_, withPoint = true))
+  }
+
+  final def canonicalText(`type`: ScType): String = {
+    def removeKeywords(s: String): String =
+      ScalaNamesUtil.escapeKeywordsFqn(s)
+
+    def nameFun(e: PsiNamedElement, withPoint: Boolean): String = {
+      removeKeywords(e match {
+        case c: PsiClass =>
+          val qname = c.qualifiedName
+          if (qname != null && qname != c.name /* exlude default package*/ ) "_root_." + qname else c.name
+        case p: PsiPackage => "_root_." + p.getQualifiedName
+        case _ =>
+          ScalaPsiUtil.nameContext(e) match {
+            case m: ScMember =>
+              m.containingClass match {
+                case o: ScObject => nameFun(o, withPoint = true) + e.name
+                case _ => e.name
+              }
+            case _ => e.name
+          }
+      }) + (if (withPoint) "." else "")
+    }
+    typeText(`type`, nameFun(_, withPoint = false), nameFun(_, withPoint = true))
+  }
+
+  private def typeText(`type`: ScType, nameFun: PsiNamedElement => String, nameWithPointFun: PsiNamedElement => String)
                                  (implicit context: TypePresentationContext): String = {
     def typesText(types: Seq[ScType]): String = types
       .map(innerTypeText(_))
@@ -269,7 +321,7 @@ trait ScalaTypePresentation extends api.TypePresentation {
                       checkWildcard: Boolean = false): String = t match {
       case namedType: NamedType => namedType.name
       case _: WildcardType => "?"
-      case ScAbstractType(tpt, _, _) => tpt.name.capitalize + api.ScTypePresentation.ABSTRACT_TYPE_POSTFIX
+      case ScAbstractType(tpt, _, _) => tpt.name.capitalize + ABSTRACT_TYPE_POSTFIX
       case TypeLambda(text)          => text
       case FunctionType(ret, params) if t.isAliasType.isEmpty =>
         val paramsText = params match {
@@ -324,6 +376,5 @@ trait ScalaTypePresentation extends api.TypePresentation {
 }
 
 object ScalaTypePresentation {
-
   val ObjectTypeSuffix = ".type"
 }

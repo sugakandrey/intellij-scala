@@ -19,8 +19,8 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinitio
 import org.jetbrains.plugins.scala.lang.psi.impl.expr.ScInterpolatedPrefixReference
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticFunction
 import org.jetbrains.plugins.scala.lang.psi.types._
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**
@@ -105,7 +105,7 @@ trait ApplicationAnnotator {
                   case WrongTypeParameterInferred => //todo: ?
                   case ExpectedTypeMismatch => //will be reported later
                   case ElementApplicabilityProblem(element, actual, expected) if inSameFile(element, holder) =>
-                    val (actualType, expectedType) = ScTypePresentation.different(actual, expected)
+                    val (actualType, expectedType) = TypePresentationUtil.different(actual, expected)
                     holder.createErrorAnnotation(element, ScalaBundle.message("type.mismatch.found.required",
                       actualType, expectedType))
                   case _ =>

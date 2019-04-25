@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentMap
 
 import com.intellij.util.containers.ContainerUtil
 import org.jetbrains.plugins.scala.extensions.TraversableExt
-import org.jetbrains.plugins.scala.lang.psi.types.ScType
+import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.ParameterizedType.substitutorCache
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.project.ProjectContext
@@ -48,7 +48,7 @@ object ParameterizedType {
     ContainerUtil.newConcurrentMap[ParameterizedType, ScSubstitutor]()
 
   def apply(designator: ScType, typeArguments: Seq[ScType]): ValueType =
-    designator.typeSystem.parameterizedType(designator, typeArguments)
+    ScParameterizedType(designator, typeArguments)
 
   //designator and type arguments
   def unapply(p: ParameterizedType): ParameterizedType = p

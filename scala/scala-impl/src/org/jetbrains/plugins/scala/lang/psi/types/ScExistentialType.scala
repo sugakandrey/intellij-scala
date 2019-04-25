@@ -15,7 +15,7 @@ import org.jetbrains.plugins.scala.project.ProjectContext
   */
 final class ScExistentialType private (val quantified: ScType,
                                        val wildcards: List[ScExistentialArgument],
-                                       private val simplified: Option[ScType]) extends ScalaType with ValueType {
+                                       private val simplified: Option[ScType]) extends ScType with ValueType {
 
   override implicit def projectContext: ProjectContext = quantified.projectContext
 

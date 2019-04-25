@@ -87,7 +87,7 @@ object ScalaByExpectedTypeWeigher {
             substitution(_)
           }
       case f: PsiField => Some(substitution(f.getType.toScType()))
-      case _ => Some(ScalaType.designator(element))
+      case _ => Some(ScType.designator(element))
     }
   }
 

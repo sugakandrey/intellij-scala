@@ -683,7 +683,7 @@ abstract class ScalaAnnotator protected()(implicit val project: Project) extends
       if (!childHasAnnotation(fun.returnTypeElement, "uncheckedVariance")) {
         fun.returnType match {
           case Right(returnType) =>
-            checkVariance(ScalaType.expandAliases(returnType).getOrElse(returnType), Covariant, fun.nameId,
+            checkVariance(ScType.expandAliases(returnType).getOrElse(returnType), Covariant, fun.nameId,
               fun.getParent, holder)
           case _ =>
         }
@@ -691,7 +691,7 @@ abstract class ScalaAnnotator protected()(implicit val project: Project) extends
       for (parameter <- fun.parameters) {
         parameter.typeElement match {
           case Some(te) if !childHasAnnotation(Some(te), "uncheckedVariance") =>
-            checkVariance(ScalaType.expandAliases(te.calcType).getOrElse(te.calcType), Contravariant,
+            checkVariance(ScType.expandAliases(te.calcType).getOrElse(te.calcType), Contravariant,
               parameter.nameId, fun.getParent, holder)
           case _ =>
         }
@@ -703,7 +703,7 @@ abstract class ScalaAnnotator protected()(implicit val project: Project) extends
                                 holder: AnnotationHolder): Unit = {
     typeable.`type`() match {
       case Right(tp) =>
-        ScalaType.expandAliases(tp) match {
+        ScType.expandAliases(tp) match {
           case Right(newTp) => checkVariance(newTp, variance, toHighlight, checkParentOf, holder)
           case _ => checkVariance(tp, variance, toHighlight, checkParentOf, holder)
         }

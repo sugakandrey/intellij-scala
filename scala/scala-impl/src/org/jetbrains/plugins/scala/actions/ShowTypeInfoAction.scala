@@ -10,7 +10,7 @@ import com.intellij.psi.util.{PsiTreeUtil, PsiUtilBase}
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScBindingPattern
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result.Typeable
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScTypeExt, TypePresentationContext}
@@ -51,7 +51,7 @@ class ShowTypeInfoAction extends AnAction(ScalaBundle.message("type.info")) {
           case expr@Typeable(tpe) =>
             implicit val context: TypePresentationContext = expr
             val tpeText = tpe.presentableText
-            val withoutAliases = Some(ScTypePresentation.withoutAliases(tpe))
+            val withoutAliases = Some(TypePresentationUtil.withoutAliases(tpe))
             val tpeWithoutImplicits = expr.getTypeWithoutImplicits().toOption
             val tpeWithoutImplicitsText = tpeWithoutImplicits.map(_.presentableText)
             val expectedTypeText = expr.expectedType().map(_.presentableText)
@@ -115,6 +115,6 @@ object ShowTypeInfoAction {
 
   private[this] def typeText(optType: Option[ScType], s: ScSubstitutor = ScSubstitutor.empty)
                             (implicit context: TypePresentationContext): Option[String] = {
-    optType.map(ScTypePresentation.withoutAliases)
+    optType.map(TypePresentationUtil.withoutAliases)
   }
 }

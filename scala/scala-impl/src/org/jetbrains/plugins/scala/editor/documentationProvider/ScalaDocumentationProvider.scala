@@ -75,7 +75,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
   }
 
 
-  def getDocumentationElementForLink(psiManager: PsiManager, link: String, context: PsiElement): PsiElement = 
+  def getDocumentationElementForLink(psiManager: PsiManager, link: String, context: PsiElement): PsiElement =
     JavaDocUtil.findReferenceTarget(psiManager, link, context)
 
   def generateDoc(element: PsiElement, originalElement: PsiElement): String = {
@@ -98,7 +98,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
 
     implicit def projectContext: ProjectContext = e.projectContext
 
-    implicit def urlText: ScType => String = projectContext.typeSystem.urlText(_)
+    implicit def urlText: ScType => String = _.urlText
 
     val builder = new HtmlBuilderWrapper
     import builder._
@@ -108,7 +108,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
         mainPart
       }
     }
-    
+
     def appendMainSection(element: PsiElement, epilogue: => Unit = {}, needsTpe: Boolean = false): Unit = {
       pre {
         element match {
@@ -143,7 +143,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
         }
 
         append(element match {
-          case typed: ScTypedDefinition => typeAnnotation(typed)
+          case typed: ScTypedDefinition => typeAnnotation(typed)(_.urlText)
           case _ if needsTpe            => ": Nothing"
           case _                        => ""
         })
@@ -171,7 +171,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
                   append(parseExtendsBlock(clazz.extendsBlock))
                 })
               }
-              
+
           }
 
           append(parseDocComment(clazz))
@@ -180,7 +180,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
             append(parseClassUrl(fun))
             appendMainSection(fun)
           }
-          
+
           append(parseDocComment(fun))
         case decl: ScDeclaredElementsHolder if decl.isInstanceOf[ScValue] || decl.isInstanceOf[ScVariable] =>
           appendDef {
@@ -211,7 +211,7 @@ class ScalaDocumentationProvider extends CodeDocumentationProvider {
               }
             })
           }
-          
+
           append(parseDocComment(tpe))
         case pattern: ScBindingPattern =>
           pre {

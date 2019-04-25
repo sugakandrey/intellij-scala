@@ -1,28 +1,23 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
 import com.intellij.openapi.roots.ProjectRootManager
-import org.jetbrains.plugins.scala.lang.psi.types.ScType
+import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
 import org.jetbrains.plugins.scala.macroAnnotations.CachedInUserData
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**
-  * @author adkozlov
-  */
-final class DottyTypeSystem private (implicit val projectContext: ProjectContext) extends TypeSystem
-  with DottyEquivalence
-  with DottyConformance
-  with DottyBounds
-  with DottyPsiTypeBridge
-  with DottyTypePresentation {
+ * @author adkozlov
+ */
+final class DottyTypeSystem private (implicit val projectContext: ProjectContext)
+    extends TypeSystem[DotType]
+    with DottyEquivalence
+    with DottyConformance
+    with DottyBounds
+    with DottyPsiTypeBridge
+    with DottyTypePresentation {
 
   override val name = "Dotty"
-
-  override def andType(types: Seq[ScType]) = DottyAndType(types)
-
-  override def parameterizedType(designator: ScType, typeArguments: Seq[ScType]): DottyRefinedType =
-    DottyRefinedType(designator)(typeArguments)
-
 }
 
 object DottyTypeSystem {

@@ -65,29 +65,6 @@ trait ScPrimaryConstructor extends ScMember with ScMethodLike {
 
   def effectiveFirstParameterSection: Seq[ScClassParameter] = effectiveParameterClauses.head.unsafeClassParameters
 
-  def methodType(result: Option[ScType]): ScType = {
-    val parameters: ScParameters = parameterList
-    val clauses = parameters.clauses
-    val returnType: ScType = result.getOrElse({
-      val clazz = getParent.asInstanceOf[ScTypeDefinition]
-      val typeParameters = clazz.typeParameters
-      val parentClazz = ScalaPsiUtil.getPlaceTd(clazz)
-      val designatorType: ScType =
-        if (parentClazz != null)
-          ScProjectionType(ScThisType(parentClazz), clazz)
-        else ScDesignatorType(clazz)
-      if (typeParameters.isEmpty) designatorType
-      else {
-        ScParameterizedType(designatorType, typeParameters.map(TypeParameterType(_)))
-      }
-    })
-    if (clauses.isEmpty) return ScMethodType(returnType, Seq.empty, false)
-    val res = clauses.foldRight[ScType](returnType){(clause: ScParameterClause, tp: ScType) =>
-      ScMethodType(tp, clause.getSmartParameters, clause.isImplicit)
-    }
-    res.asInstanceOf[ScMethodType]
-  }
-
   @Cached(ModCount.getBlockModificationCount, this)
   def getFunctionWrappers: Seq[ScPrimaryConstructorWrapper] = {
     val buffer = mutable.ArrayBuffer.empty[ScPrimaryConstructorWrapper]

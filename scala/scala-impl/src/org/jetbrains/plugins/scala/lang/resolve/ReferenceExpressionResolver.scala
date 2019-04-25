@@ -523,7 +523,7 @@ class ReferenceExpressionResolver(implicit projectContext: ProjectContext) {
           case Some(r@ScalaResolveResult(b: ScTypedDefinition, _)) if b.isStable =>
             r.fromType match {
               case Some(fT) => ScProjectionType(fT, b)
-              case None => ScalaType.designator(b)
+              case None => ScType.designator(b)
             }
           case _ => aType
         }

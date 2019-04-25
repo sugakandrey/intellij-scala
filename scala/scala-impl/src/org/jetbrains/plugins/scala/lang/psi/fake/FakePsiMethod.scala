@@ -18,8 +18,8 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScValue, ScVariable}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinition
 import org.jetbrains.plugins.scala.lang.psi.types._
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.result._
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 /**
  * User: Alexander Podkhalyuzin

@@ -304,9 +304,8 @@ class ScalaPsiManager(implicit val project: Project) {
     else andType(types)
   }
 
-  private def andType(psiTypes: Seq[PsiType]): ScType = {
-    new ProjectContext(project).typeSystem.andType(psiTypes.map(_.toScType()))
-  }
+  private def andType(psiTypes: Seq[PsiType]): ScType =
+    ScCompoundType(psiTypes.map(_.toScType()))
 
   def getStableTypeAliasesNames: Iterable[String] = {
     import ScalaIndexKeys._

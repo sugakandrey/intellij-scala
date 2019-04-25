@@ -7,9 +7,9 @@ package expr
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params._
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
-/** 
+/**
 * @author Alexander Podkhalyuzin
 * Date: 07.03.2008
 */

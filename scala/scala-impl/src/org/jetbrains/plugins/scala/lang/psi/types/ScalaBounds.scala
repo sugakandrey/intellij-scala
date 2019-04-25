@@ -15,6 +15,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorTy
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.ScTypePolymorphicType
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil.smartEquivalence
 
 import scala.annotation.tailrec
@@ -22,7 +23,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait ScalaBounds extends api.Bounds {
-  typeSystem: api.TypeSystem =>
+  typeSystem: api.TypeSystem[ScType] =>
 
   import ScalaBounds._
 
@@ -186,7 +187,7 @@ trait ScalaBounds extends api.Bounds {
       }
       getNamedElement match {
         case t: ScTemplateDefinition => t.superTypes.map(tp => new ClassLike(subst(tp))).filter(!_.isEmpty)
-        case p: PsiClass => p.getSupers.toSeq.map(cl => new ClassLike(ScalaType.designator(cl))).filter(!_.isEmpty)
+        case p: PsiClass => p.getSupers.toSeq.map(cl => new ClassLike(ScType.designator(cl))).filter(!_.isEmpty)
         case _: ScTypeAlias =>
           val upperType: ScType = tp.isAliasType.get.upper.getOrAny
           val classes: Seq[ClassLike] = {
@@ -223,7 +224,7 @@ trait ScalaBounds extends api.Bounds {
     def baseDesignator: ScType = {
       projectionOption match {
         case Some(proj) => ScProjectionType(proj, getNamedElement)
-        case None => ScalaType.designator(getNamedElement)
+        case None => ScType.designator(getNamedElement)
       }
     }
 

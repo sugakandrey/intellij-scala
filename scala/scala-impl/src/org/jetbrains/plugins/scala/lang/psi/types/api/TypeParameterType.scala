@@ -4,6 +4,7 @@ import com.intellij.psi.PsiTypeParameter
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScTypeParam
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintSystem, ConstraintsResult, LeafType, NamedType, ScType}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 class TypeParameterType private (val typeParameter: TypeParameter)

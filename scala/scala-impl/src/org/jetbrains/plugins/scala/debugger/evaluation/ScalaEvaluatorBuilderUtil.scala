@@ -35,9 +35,9 @@ import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticF
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -408,7 +408,7 @@ private[evaluation] trait ScalaEvaluatorBuilderUtil {
     ScalaDuplexEvaluator(new ScalaNewClassInstanceEvaluator(valueClassType, signature, Array(value)), value)
   }
 
-  def repeatedArgEvaluator(exprsForP: Seq[ScExpression], expectedType: ScType, context: PsiElement): Evaluator = {
+  def repeatedArgEvaluator(exprsForP: Seq[ScExpression], expectedType: ScalaType, context: PsiElement): Evaluator = {
     def seqEvaluator: Evaluator = {
       val argTypes = exprsForP.map(_.`type`().getOrAny)
       val argTypeText =

@@ -3,8 +3,8 @@ package org.jetbrains.plugins.scala.lang.psi.types
 import java.util.Objects
 
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAlias
-import org.jetbrains.plugins.scala.lang.psi.types.api.TypeParameter
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
 abstract class TypeAliasSignature {
   def typeAlias: ScTypeAlias

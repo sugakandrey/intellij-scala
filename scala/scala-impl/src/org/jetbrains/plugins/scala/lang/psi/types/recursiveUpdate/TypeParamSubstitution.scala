@@ -2,8 +2,9 @@ package org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate
 
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{TypeParamId, TypeParamIdOwner}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameter, TypeParameterType, UndefinedType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameterType, UndefinedType}
 import org.jetbrains.plugins.scala.lang.psi.types.{LeafType, ScAbstractType, ScLiteralType, ScType}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
 import scala.collection.Seq
 import scala.collection.immutable.LongMap

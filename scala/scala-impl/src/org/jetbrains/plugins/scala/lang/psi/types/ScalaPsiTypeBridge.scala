@@ -18,7 +18,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import scala.collection.JavaConverters._
 
 trait ScalaPsiTypeBridge extends api.PsiTypeBridge {
-  typeSystem: api.TypeSystem =>
+  typeSystem: api.TypeSystem[ScType] =>
 
   override def toScType(psiType: PsiType,
                         treatJavaObjectAsAny: Boolean)

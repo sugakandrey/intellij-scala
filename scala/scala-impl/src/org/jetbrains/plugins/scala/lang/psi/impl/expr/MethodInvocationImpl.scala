@@ -14,12 +14,13 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.imports.usages.ImportUs
 import org.jetbrains.plugins.scala.lang.psi.types.Compatibility._
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.FunctionType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{Parameter, ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result.{Failure, TypeResult}
 import org.jetbrains.plugins.scala.lang.resolve.MethodTypeProvider._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 import org.jetbrains.plugins.scala.lang.resolve.processor.DynamicResolveProcessor._
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 import org.jetbrains.plugins.scala.macroAnnotations.{Cached, ModCount}
 
 
@@ -225,7 +226,7 @@ object MethodInvocationImpl {
     def apply(`type`: ScType)
              (implicit elementScope: ElementScope): ScType = {
       val maybeStringType = elementScope.getCachedClass("java.lang.String")
-        .map(ScalaType.designator(_))
+        .map(ScType.designator)
 
       api.TupleType(Seq(maybeStringType.getOrElse(api.Any), `type`))
     }

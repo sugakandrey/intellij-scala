@@ -18,7 +18,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScTypeParam
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateBody
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory._
-import org.jetbrains.plugins.scala.lang.psi.types.{ScTypeExt, ScalaType}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScTypeExt, ScalaType}
 import org.jetbrains.plugins.scala.lang.refactoring.ScalaRefactoringActionHandler
 import org.jetbrains.plugins.scala.lang.refactoring.memberPullUp.ScalaPullUpProcessor
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaDirectoryService
@@ -204,7 +204,7 @@ class ScalaExtractTraitHandler extends ScalaRefactoringActionHandler {
         forMember(elem) {
           m => m.containingClass match {
             case null => None
-            case c if selfTypeOfClazz.get.conforms(ScalaType.designator(c)) => Some(c)
+            case c if selfTypeOfClazz.get.conforms(ScType.designator(c)) => Some(c)
             case _ => None
           }
         }

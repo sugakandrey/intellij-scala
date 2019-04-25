@@ -8,8 +8,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.expr.ScNewTemplateDefinition
 import org.jetbrains.plugins.scala.lang.psi.fake.FakePsiMethod
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
 import org.jetbrains.plugins.scala.lang.psi.types.api.Unit
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
-
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 /**
  * @author Nikolay.Tropin
  */

@@ -17,7 +17,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, Nothing, TypeParamet
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 
-/** 
+/**
 * @author Alexander Podkhalyuzin
 * Date: 28.02.2008
 */
@@ -39,7 +39,7 @@ class ScConstructorPatternImpl(node: ASTNode) extends ScalaPsiElementImpl (node)
           //todo: remove all classes?
           case td: ScClass if td.typeParameters.nonEmpty =>
             val refType: ScType = ScSimpleTypeElementImpl.
-              calculateReferenceType(ref).getOrElse(ScalaType.designator(td))
+              calculateReferenceType(ref).getOrElse(ScType.designator(td))
             val newSubst = {
               val clazzType = ScParameterizedType(refType, td.getTypeParameters.map(UndefinedType(_)))
               val toAnySubst = bind(td.typeParameters)(Function.const(Any))
@@ -51,8 +51,8 @@ class ScConstructorPatternImpl(node: ASTNode) extends ScalaPsiElementImpl (node)
               }
             }
             Right(ScParameterizedType(refType, td.getTypeParameters.map(tp => newSubst(TypeParameterType(tp)))))
-          case td: ScClass => Right(ScalaType.designator(td))
-          case obj: ScObject => Right(ScalaType.designator(obj))
+          case td: ScClass => Right(ScType.designator(td))
+          case obj: ScObject => Right(ScType.designator(obj))
           case fun: ScFunction /*It's unapply method*/ if (fun.name == "unapply" || fun.name == "unapplySeq") &&
                   fun.parameters.count(!_.isImplicitParameter) == 1 =>
             val substitutor = r.substitutor

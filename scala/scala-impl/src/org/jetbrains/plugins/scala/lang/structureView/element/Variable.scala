@@ -8,7 +8,7 @@ import org.jetbrains.plugins.scala.extensions.{IteratorExt, PsiElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScBlockExpr
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScVariable, ScVariableDefinition}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScNamedElement
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.structureView.element.AbstractItemPresentation.withSimpleNames
 
 /**
@@ -23,7 +23,7 @@ private class Variable(element: ScNamedElement, inherited: Boolean, override val
   override def getPresentableText: String = {
     val typeAnnotation = variable.flatMap(_.typeElement.map(_.getText))
 
-    def inferredType = if (showType) variable.flatMap(_.`type`().toOption).map(ScTypePresentation.withoutAliases) else None
+    def inferredType = if (showType) variable.flatMap(_.`type`().toOption).map(TypePresentationUtil.withoutAliases) else None
 
     withSimpleNames(element.nameId.getText + typeAnnotation.orElse(inferredType).map(": " + _).mkString)
   }

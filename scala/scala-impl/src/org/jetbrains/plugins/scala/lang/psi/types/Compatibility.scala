@@ -20,10 +20,10 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.imports.usages.ImportUs
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticFunction
 import org.jetbrains.plugins.scala.lang.psi.implicits.ImplicitCollector
 import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, UndefinedType}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 import org.jetbrains.plugins.scala.macroAnnotations.{CachedWithRecursionGuard, ModCount}
 import org.jetbrains.plugins.scala.project.ProjectContext
 
@@ -112,9 +112,7 @@ object Compatibility {
       else throw new RuntimeException("Illegal state for seqClass variable")
     }.orElse {
       expr.elementScope.getCachedClass("scala.collection.Seq")
-    }.map {
-      ScalaType.designator
-    }
+    }.map(ScType.designator)
 
   def checkConformance(checkNames: Boolean,
                        parameters: Seq[Parameter],
@@ -214,8 +212,8 @@ object Compatibility {
       else {
         val getIt = used.indexOf(false)
         used(getIt) = true
-        val param: Parameter = parameters(getIt)
-        val paramType = param.paramType
+        val param        = parameters(getIt)
+        val paramType    = param.paramType
         val expectedType = param.expectedType
         val typeResult =
           expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType))._1
@@ -240,7 +238,7 @@ object Compatibility {
             case Some(seqType) =>
               val getIt = used.indexOf(false)
               used(getIt) = true
-              val param: Parameter = parameters(getIt)
+              val param = parameters(getIt)
 
               if (!param.isRepeated)
                 problems ::= ExpansionForNonRepeatedParameter(expr)

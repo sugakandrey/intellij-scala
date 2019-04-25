@@ -11,7 +11,7 @@ import org.jetbrains.plugins.scala.caches.RecursionManager
   * @author adkozlov
   */
 trait Equivalence {
-  typeSystem: TypeSystem =>
+  typeSystem: TypeSystem[_] =>
 
   import TypeSystem._
   import ConstraintsResult.Left

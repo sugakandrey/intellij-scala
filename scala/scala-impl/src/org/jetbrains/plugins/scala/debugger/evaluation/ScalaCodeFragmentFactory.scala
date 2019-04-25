@@ -63,7 +63,7 @@ class ScalaCodeFragmentFactory extends CodeFragmentFactory {
         }
         val psiClass: PsiClass = nameRef.get
         if (psiClass != null) {
-          return ScalaType.designator(psiClass)
+          return ScType.designator(psiClass)
         }
       }
       null

@@ -68,13 +68,9 @@ object AnnotatorHighlighter {
       Stats.trigger(FeatureKey.collectionPackHighlighting)
 
       def conformsByNames(tp: ScType, qn: List[String]): Boolean =
-        qn.flatMap {
-          refElement.elementScope.getCachedClass(_)
-        }.map {
-          ScalaType.designator
-        }.exists {
-          tp.conforms
-        }
+        qn.flatMap(refElement.elementScope.getCachedClass(_))
+          .map(ScType.designator)
+          .exists(tp.conforms)
 
       def simpleAnnotate(annotationText: String, annotationAttributes: TextAttributesKey) {
         if (SCALA_FACTORY_METHODS_NAMES.contains(refElement.nameId.getText)) {
@@ -107,7 +103,7 @@ object AnnotatorHighlighter {
     }
 
     def annotateCollection(resolvedClazz: PsiClass) {
-      annotateCollectionByType(ScalaType.designator(resolvedClazz))
+      annotateCollectionByType(ScType.designator(resolvedClazz))
     }
 
     def isHighlightableScalaTestKeyword(fun: ScMember): Boolean = {

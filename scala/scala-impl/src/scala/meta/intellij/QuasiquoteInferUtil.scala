@@ -9,9 +9,9 @@ import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.createTypeFromText
 import org.jetbrains.plugins.scala.lang.psi.impl.base.patterns.ScInterpolationPatternImpl
 import org.jetbrains.plugins.scala.lang.psi.impl.expr.ScMethodCallImpl
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 import scala.meta.Dialect
@@ -64,7 +64,16 @@ object QuasiquoteInferUtil extends scala.meta.quasiquotes.QuasiquoteParsers {
     types.zipWithIndex.map {
       case (maybeType, i) =>
         val tp = maybeType.orElse(treeType).get
-        new Parameter(s"__meta$i", None, tp, tp, isDefault = false, isRepeated = false, isByName = false, index = i)
+        Parameter(
+          s"__meta$i",
+          None,
+          tp,
+          tp,
+          isDefault  = false,
+          isRepeated = false,
+          isByName   = false,
+          index      = i
+        )
     }
   }
 

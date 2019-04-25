@@ -11,7 +11,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorTy
  */
 
 trait ScalaEquivalence extends api.Equivalence {
-  typeSystem: api.TypeSystem =>
+  typeSystem: api.TypeSystem[ScType] =>
 
   override protected def equivComputable(key: Key): Computable[ConstraintsResult] = new Computable[ConstraintsResult] {
     import ConstraintSystem.empty

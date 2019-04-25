@@ -4,8 +4,9 @@ import com.intellij.psi.PsiClass
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params._
 import org.jetbrains.plugins.scala.lang.psi.types.ScalaConformance._
 import org.jetbrains.plugins.scala.lang.psi.types.SmartSuperTypeUtil._
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameter, TypeParameterType, _}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameterType, _}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.ScTypePolymorphicType
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project._
 
 /**

@@ -365,14 +365,14 @@ object MixinNodes {
 
       clazz match {
         case obj: ScObject if obj.isPackageObject && obj.qualifiedName == "scala" =>
-          Seq(ScalaType.designator(obj))
+          Seq(ScType.designator(obj))
         case newTd: ScNewTemplateDefinition =>
           generalLinearization(None, newTd.superTypes)
         case _ =>
           ProgressManager.checkCanceled()
           def default =
-            if (clazz.getTypeParameters.isEmpty) ScalaType.designator(clazz)
-            else ScParameterizedType(ScalaType.designator(clazz),
+            if (clazz.getTypeParameters.isEmpty) ScType.designator(clazz)
+            else ScParameterizedType(ScType.designator(clazz),
               clazz.getTypeParameters.map(TypeParameterType(_)))
 
           val classType = clazz match {

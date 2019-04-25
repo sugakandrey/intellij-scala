@@ -12,11 +12,12 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTemplateDefin
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.{ScTypeParametersOwner, ScTypedDefinition}
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScProjectionType, ScThisType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Covariant, TypeParameter, Unit, Variance}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Covariant, Unit, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
 import org.jetbrains.plugins.scala.lang.resolve.{ResolveTargets, StdKinds}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
 /**
  * @author Alexander Podkhalyuzin

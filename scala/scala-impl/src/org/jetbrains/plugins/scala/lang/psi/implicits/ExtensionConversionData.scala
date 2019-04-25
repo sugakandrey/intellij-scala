@@ -7,10 +7,11 @@ import org.jetbrains.plugins.scala.lang.psi.ElementScope
 import org.jetbrains.plugins.scala.lang.psi.api.InferUtil
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScExpression
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
-import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, TypeParameter, ValType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, ValType}
 import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintSystem, ScType}
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, MethodResolveProcessor, ResolveProcessor}
 import org.jetbrains.plugins.scala.lang.resolve.{ResolveTargets, ScalaResolveResult}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 import scala.collection.{Seq, Set}

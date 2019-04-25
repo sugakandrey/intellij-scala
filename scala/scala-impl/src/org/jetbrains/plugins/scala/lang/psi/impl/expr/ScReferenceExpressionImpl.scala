@@ -35,6 +35,7 @@ import org.jetbrains.plugins.scala.lang.resolve.MethodTypeProvider._
 import org.jetbrains.plugins.scala.lang.resolve._
 import org.jetbrains.plugins.scala.lang.resolve.processor.DynamicResolveProcessor.ScTypeForDynamicProcessorEx
 import org.jetbrains.plugins.scala.lang.resolve.processor._
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.macroAnnotations.{CachedWithRecursionGuard, ModCount}
 
 import scala.collection.mutable
@@ -296,7 +297,7 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceImpl(node)
               if (isStableContext(tp) && refPatt.isStable) {
                 r.fromType match {
                   case Some(fT) => ScProjectionType(fT, refPatt)
-                  case None     => ScalaType.designator(refPatt)
+                  case None     => ScType.designator(refPatt)
                 }
               } else s(tp)
             }.getOrElse(return result)
@@ -339,13 +340,13 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceImpl(node)
         r.fromType match {
           case Some(fT) if param.isVal && stableTypeRequired => ScProjectionType(fT, param)
           case Some(ScThisType(clazz)) if owner != null && PsiTreeUtil.isContextAncestor(owner, this, true) &&
-            stableTypeRequired && owner.isInstanceOf[ScTypeDefinition] && owner == clazz => ScalaType.designator(param) //todo: think about projection from this type?
+            stableTypeRequired && owner.isInstanceOf[ScTypeDefinition] && owner == clazz => ScType.designator(param) //todo: think about projection from this type?
           case _ if owner != null && PsiTreeUtil.isContextAncestor(owner, this, true) &&
-            stableTypeRequired && !owner.isInstanceOf[ScTypeDefinition] => ScalaType.designator(param)
+            stableTypeRequired && !owner.isInstanceOf[ScTypeDefinition] => ScType.designator(param)
           case _ =>
             owner match {
               case function: ScFunction if PsiTreeUtil.isContextAncestor(function, this, true) &&
-                isMethodDependent(function) => ScalaType.designator(param)
+                isMethodDependent(function) => ScType.designator(param)
               case _ =>
                 val result = param.getRealParameterType
                 s(result match {
@@ -371,7 +372,7 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceImpl(node)
         def tail = {
           fromType match {
             case Some(tp) => ScProjectionType(tp, obj)
-            case _ => ScalaType.designator(obj)
+            case _ => ScType.designator(obj)
           }
         }
         //hack to add Eta expansion for case classes
@@ -401,7 +402,7 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceImpl(node)
           if (isStableContext(tp) && f.isStable) {
             r.fromType match {
               case Some(fT) => ScProjectionType(fT, f)
-              case None     => ScalaType.designator(f)
+              case None     => ScType.designator(f)
             }
           } else s(tp)
         }.getOrElse(return result)
@@ -411,14 +412,14 @@ class ScReferenceExpressionImpl(node: ASTNode) extends ScReferenceImpl(node)
           case Right(tp) => s(tp)
           case _ => return result
         }
-      case ScalaResolveResult(pack: PsiPackage, _) => ScalaType.designator(pack)
+      case ScalaResolveResult(pack: PsiPackage, _) => ScType.designator(pack)
       case ScalaResolveResult(clazz: ScClass, s) if clazz.isCase =>
         val constructor =
           clazz.constructor
             .getOrElse(return Failure("Case Class hasn't primary constructor"))
         constructor.polymorphicType(s)
       case ScalaResolveResult(clazz: ScTypeDefinition, s) if clazz.typeParameters.nonEmpty =>
-        s(ScParameterizedType(ScalaType.designator(clazz),
+        s(ScParameterizedType(ScType.designator(clazz),
           clazz.typeParameters.map(TypeParameterType(_))))
       case ScalaResolveResult(clazz: PsiClass, _) => ScDesignatorType.static(clazz) //static Java class
       case ScalaResolveResult(field: PsiField, s) =>

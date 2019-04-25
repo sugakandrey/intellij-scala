@@ -32,6 +32,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve._
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, MostSpecificUtil}
 import org.jetbrains.plugins.scala.project.{ProjectContext, _}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.settings.ScalaProjectSettings
 import org.jetbrains.plugins.scala.util.BetterMonadicForSupport.Implicit0Binding
 
@@ -507,7 +508,7 @@ class ImplicitCollector(place: PsiElement,
       if (typeParameters.isEmpty && implicitClause.isEmpty) Some(c.copy(implicitReason = OkResult), subst)
       else {
         val methodType = implicitClause.map {
-          li => ScMethodType(ret, li.getSmartParameters, isImplicit = true)(place.elementScope)
+          li => ScMethodType(ret, li.getSmartParameters.scala2Parameters, isImplicit = true)(place.elementScope)
         }.fold(ret)(subst)
 
         val polymorphicTypeParameters = typeParameters.map(TypeParameter(_).update(subst))

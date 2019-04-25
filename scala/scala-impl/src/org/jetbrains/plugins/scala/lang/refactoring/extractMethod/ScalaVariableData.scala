@@ -7,9 +7,9 @@ import org.jetbrains.plugins.scala.ScalaLanguage
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
 import org.jetbrains.plugins.scala.lang.psi.fake.FakePsiParameter
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.refactoring.ScTypePresentationExt
 import org.jetbrains.plugins.scala.lang.refactoring.extractMethod.ScalaVariableData._
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 /**
  * Nikolay.Tropin
@@ -17,7 +17,7 @@ import org.jetbrains.plugins.scala.lang.refactoring.extractMethod.ScalaVariableD
  */
 class ScalaVariableData(val element: ScTypedDefinition,
                         val isInsideOfElements: Boolean,
-                        val scType: ScType) 
+                        val scType: ScType)
         extends VariableData(createFakeParameter(element, scType)) {
 
   `type` = new FakePsiType(scType)

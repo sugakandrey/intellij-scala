@@ -129,12 +129,12 @@ class ScExtendsBlockImpl private(stub: ScExtendsBlockStub, node: ASTNode)
 
   private def scalaProduct: ScType = {
     val sp = scalaProductClass
-    if (sp != null) ScalaType.designator(sp) else null
+    if (sp != null) ScType.designator(sp) else null
   }
 
   private def scalaSerializable: ScType = {
     val sp = scalaSerializableClass
-    if (sp != null) ScalaType.designator(sp) else null
+    if (sp != null) ScType.designator(sp) else null
   }
 
   private def javaObject: ScDesignatorType = {

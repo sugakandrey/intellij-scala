@@ -1,6 +1,7 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
 import com.intellij.openapi.util.Computable
+import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Equivalence, TypeSystem}
 
@@ -8,7 +9,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.{Equivalence, TypeSystem}
   * @author adkozlov
   */
 trait DottyEquivalence extends Equivalence {
-  typeSystem: TypeSystem =>
+  typeSystem: TypeSystem[DotType] =>
 
   override protected def equivComputable(key: Key): Computable[ConstraintsResult] =
     () => ConstraintsResult.Left

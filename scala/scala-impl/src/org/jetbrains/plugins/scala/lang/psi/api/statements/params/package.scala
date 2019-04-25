@@ -7,7 +7,8 @@ import com.intellij.util.containers.{ConcurrentLongObjectMap, ContainerUtil}
 import org.jetbrains.plugins.scala.extensions.{ObjectExt, PsiClassExt, PsiElementExt, PsiNamedElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameter, TypeParameterType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeParameterType
+import org.jetbrains.plugins.scala.lang.typeInference.{DotTypeParameter, TypeParameter, TypeParameterT}
 
 import scala.language.implicitConversions
 
@@ -77,7 +78,7 @@ package object params {
       case p => cachedId(p, p.name)
     }
 
-    implicit val typeParam: TypeParamId[TypeParameter] = t => psi.typeParamId(t.psiTypeParameter)
+    implicit val typeParam: TypeParamId[TypeParameterT[_]] = t => psi.typeParamId(t.psiTypeParameter)
 
     implicit val typeParamType: TypeParamId[TypeParameterType] = t => psi.typeParamId(t.psiTypeParameter)
 

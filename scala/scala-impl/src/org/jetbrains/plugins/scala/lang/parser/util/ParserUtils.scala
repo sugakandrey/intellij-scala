@@ -52,15 +52,15 @@ object ParserUtils {
     }
     id.charAt(0) match {
       case '~' | '#' | '@' | '?' | '\\' => 0 //todo: other special characters?
-      case '*' | '/' | '%' => 1
-      case '+' | '-' => 2
-      case ':' => 3
-      case '=' | '!' => 4
-      case '<' | '>' => 5
-      case '&' => 6
-      case '^' => 7
-      case '|' => 8
-      case _ => 9
+      case '*' | '/' | '%'              => 1
+      case '+' | '-'                    => 2
+      case ':'                          => 3
+      case '=' | '!'                    => 4
+      case '<' | '>'                    => 5
+      case '&'                          => 6
+      case '^'                          => 7
+      case '|'                          => 8
+      case _                            => 9
     }
   }
 

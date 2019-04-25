@@ -121,7 +121,7 @@ object ScLiteralType {
   def wideType(kind: Kind)(implicit projectContext: ProjectContext): ScType = {
     def getCachedClass(fqn: String) =
       ElementScope(projectContext).getCachedClass(fqn)
-        .map(ScalaType.designator).getOrElse(api.Nothing)
+        .map(ScType.designator).getOrElse(api.Nothing)
 
     kind match {
       case Kind.Boolean => api.Boolean

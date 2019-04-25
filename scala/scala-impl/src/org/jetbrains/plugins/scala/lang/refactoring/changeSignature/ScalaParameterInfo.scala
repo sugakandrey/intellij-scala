@@ -61,7 +61,7 @@ class ScalaParameterInfo(@BeanProperty var name: String,
     }
     else if (isRepeatedParameter) {
       val seqType = ScalaPsiManager.instance(project).getCachedClass(elementScope.scope, "scala.collection.Seq")
-        .map(ScalaType.designator(_))
+        .map(ScType.designator)
         .getOrElse(Nothing)
       ScParameterizedType(seqType, Seq(scType))
     }
@@ -117,7 +117,7 @@ object ScalaParameterInfo {
     val elems = p.children.takeWhile(_ != nameId)
     elems.map(_.getText).mkString
   }
-  
+
   def allForMethod(methodLike: ScMethodLike): Seq[Seq[ScalaParameterInfo]] = {
     def infos(clause: ScParameterClause): Seq[ScalaParameterInfo] = clause.parameters.map(new ScalaParameterInfo(_))
     methodLike.parameterList.clauses.map(infos)

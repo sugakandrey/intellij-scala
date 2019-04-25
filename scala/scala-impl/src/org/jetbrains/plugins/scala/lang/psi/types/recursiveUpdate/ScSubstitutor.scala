@@ -7,9 +7,10 @@ import com.intellij.openapi.util.Key
 import org.jetbrains.plugins.scala.extensions.ArrayExt
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, TypeParamId}
 import org.jetbrains.plugins.scala.lang.psi.types.Compatibility.Expression
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Covariant, TypeParameter, TypeParameterType, Variance}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Covariant, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, ReplaceWith, Stop}
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeParameterType
+import org.jetbrains.plugins.scala.lang.typeInference.{Parameter, TypeParameter}
 
 import scala.annotation.tailrec
 import scala.collection.Seq

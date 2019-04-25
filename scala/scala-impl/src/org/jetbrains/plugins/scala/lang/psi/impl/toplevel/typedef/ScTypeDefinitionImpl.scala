@@ -81,7 +81,7 @@ abstract class ScTypeDefinitionImpl[T <: ScTemplateDefinition](stub: ScTemplateD
 
   override final def getTypeWithProjections(thisProjections: Boolean): TypeResult = {
     val designator = containingClass match {
-      case null => ScalaType.designator(this)
+      case null => ScType.designator(this)
       case clazz =>
         val projected = if (thisProjections) ScThisType(clazz)
         else clazz.getTypeWithProjections().getOrElse {

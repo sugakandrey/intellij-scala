@@ -21,7 +21,7 @@ import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.TypeDefinition
 import org.jetbrains.plugins.scala.lang.psi.implicits.ImplicitResolveResult
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{Parameter, ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.psi.types.{api, _}
@@ -31,6 +31,7 @@ import org.jetbrains.plugins.scala.lang.resolve.MethodTypeProvider._
 import org.jetbrains.plugins.scala.lang.resolve.processor.DynamicResolveProcessor._
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, MethodResolveProcessor}
 import org.jetbrains.plugins.scala.lang.resolve.{ScalaResolveResult, StdKinds}
+import org.jetbrains.plugins.scala.lang.typeInference.{Parameter, TypeParameter}
 import org.jetbrains.plugins.scala.macroAnnotations.{CachedWithRecursionGuard, ModCount}
 import org.jetbrains.plugins.scala.util.SAMUtil
 
@@ -459,7 +460,7 @@ class ExpectedTypesImpl extends ExpectedTypes {
   private def paramTypeForRepeated(params: Seq[Parameter])(implicit elementScope: ElementScope): Option[ParameterType] = {
     val seqClass = elementScope.getCachedClass("scala.collection.Seq")
     seqClass.map { seq =>
-      (ScParameterizedType(ScalaType.designator(seq), Seq(params.last.paramType)), None)
+      (ScParameterizedType(ScType.designator(seq), Seq(params.last.paramType)), None)
     }
   }
 

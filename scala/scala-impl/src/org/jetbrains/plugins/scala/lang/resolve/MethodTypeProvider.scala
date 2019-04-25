@@ -9,11 +9,13 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScFun, ScFunction}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinition
 import org.jetbrains.plugins.scala.lang.psi.fake.FakePsiMethod
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameter, TypeParameterType}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{Parameter, ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeParameterType
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType}
 import org.jetbrains.plugins.scala.lang.psi.{ElementScope, ScalaPsiUtil}
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
 import scala.annotation.tailrec
 import scala.collection.Seq
@@ -117,7 +119,7 @@ object MethodTypeProvider {
       val clauses = element.effectiveParameterClauses
       if (clauses.nonEmpty)
         clauses.foldRight[ScType](retType) { (clause: ScParameterClause, tp: ScType) =>
-          ScMethodType(tp, clause.getSmartParameters, clause.isImplicit)
+          ScMethodType(tp, clause.getSmartParameters.scala2Parameters, clause.isImplicit)
         }
       else ScMethodType(retType, Seq.empty, isImplicit = false)
     }
@@ -136,7 +138,7 @@ object MethodTypeProvider {
       if (clauses.isEmpty) return ScMethodType(retType, Seq.empty, isImplicit = false)
 
       clauses.foldRight[ScType](retType) { (clause: ScParameterClause, tp: ScType) =>
-        ScMethodType(tp, clause.getSmartParameters, clause.isImplicit)
+        ScMethodType(tp, clause.getSmartParameters.scala2Parameters, clause.isImplicit)
       }
     }
 

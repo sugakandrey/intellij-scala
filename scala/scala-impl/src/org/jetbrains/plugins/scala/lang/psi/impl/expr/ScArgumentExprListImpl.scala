@@ -11,8 +11,7 @@ import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScConstructorInvocation
 import org.jetbrains.plugins.scala.lang.psi.api.expr._
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.{createComma, createNewLineNode}
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
-
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 /**
 * @author Alexander Podkhalyuzin
 * Date: 07.03.2008

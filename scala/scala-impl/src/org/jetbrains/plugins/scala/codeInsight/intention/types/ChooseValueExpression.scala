@@ -8,7 +8,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import org.jetbrains.plugins.scala.lang.psi.TypeAdjuster
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypeText
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil.ScTypeText
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaRefactoringUtil
 
 /**

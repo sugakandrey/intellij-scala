@@ -15,7 +15,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScBindingPattern
 import org.jetbrains.plugins.scala.lang.psi.api.base.types.{ScParameterizedTypeElement, ScSimpleTypeElement, ScTypeElement, ScTypeProjection}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScTypeAlias, ScTypeAliasDefinition}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorType
 import org.jetbrains.plugins.scala.lang.psi.types.{ScalaTypePresentation, TypePresentationContext}
 import org.jetbrains.plugins.scala.lang.refactoring.ScalaNamesValidator.isIdentifier
@@ -380,7 +380,7 @@ object TypeAdjuster extends ApplicationAdapter {
         override protected def execute(namedElement: PsiNamedElement)
                                       (implicit state: ResolveState): Boolean = namedElement match {
           case ta: ScTypeAliasDefinition if ta.isAliasFor(clazz) &&
-            !ScTypePresentation.shouldExpand(ta) && !ta.isDeprecated =>
+            !TypePresentationUtil.shouldExpand(ta) && !ta.isDeprecated =>
 
             collected = Some(ta)
             false

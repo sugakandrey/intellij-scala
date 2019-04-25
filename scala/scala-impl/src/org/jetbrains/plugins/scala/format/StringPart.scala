@@ -8,7 +8,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.base.ScLiteral
 import org.jetbrains.plugins.scala.lang.psi.api.expr.{ScBlockExpr, ScExpression}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.createExpressionFromText
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
-import org.jetbrains.plugins.scala.lang.psi.types.ScalaType.expandAliases
+import org.jetbrains.plugins.scala.lang.psi.types.ScType.expandAliases
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**

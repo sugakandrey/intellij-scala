@@ -12,7 +12,7 @@ import org.jetbrains.plugins.scala.caches.RecursionManager
   * @author adkozlov
   */
 trait Conformance {
-  typeSystem: TypeSystem =>
+  typeSystem: TypeSystem[_] =>
 
   import TypeSystem._
   import ConstraintsResult.Left

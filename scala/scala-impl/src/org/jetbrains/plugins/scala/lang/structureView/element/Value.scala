@@ -1,14 +1,13 @@
 package org.jetbrains.plugins.scala.lang.structureView.element
 
 import javax.swing.Icon
-
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.scala.extensions.{IteratorExt, PsiElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScBlockExpr
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScPatternDefinition, ScValue}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScNamedElement
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.structureView.element.AbstractItemPresentation.withSimpleNames
 
 /**
@@ -23,7 +22,7 @@ class Value(element: ScNamedElement, inherited: Boolean, override val showType: 
   override def getPresentableText: String = {
     val typeAnnotation = value.flatMap(_.typeElement.map(_.getText))
 
-    def inferredType = if (showType) value.flatMap(_.`type`().toOption).map(ScTypePresentation.withoutAliases) else None
+    def inferredType = if (showType) value.flatMap(_.`type`().toOption).map(TypePresentationUtil.withoutAliases) else None
 
     withSimpleNames(element.name + typeAnnotation.orElse(inferredType).map(": " + _).mkString)
   }

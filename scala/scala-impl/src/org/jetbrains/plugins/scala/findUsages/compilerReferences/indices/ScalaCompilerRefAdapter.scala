@@ -18,7 +18,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScFunction, ScValueO
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.{ScModifierListOwner, ScTypedDefinition}
 import org.jetbrains.plugins.scala.lang.psi.fake.FakePsiMethod
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 private class ScalaCompilerRefAdapter extends JavaCompilerRefAdapterCompat {
   import ScalaCompilerRefAdapter._

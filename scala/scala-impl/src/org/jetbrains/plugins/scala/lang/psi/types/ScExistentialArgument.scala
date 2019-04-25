@@ -1,9 +1,10 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAlias
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameter, TypeParameterType, TypeVisitor, ValueType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeParameterType, TypeVisitor, ValueType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, Stop}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**

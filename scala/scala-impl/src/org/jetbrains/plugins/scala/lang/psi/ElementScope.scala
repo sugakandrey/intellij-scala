@@ -7,7 +7,7 @@ import org.jetbrains.plugins.scala.extensions.{ArrayExt, OptionExt, PsiElementEx
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScObject, ScTrait}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, UndefinedType}
-import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScalaType}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType, ScalaType}
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**
@@ -37,7 +37,7 @@ case class ElementScope(project: Project, scope: GlobalSearchScope) {
         UndefinedType(_, level = level)
       }
 
-      ScParameterizedType(ScalaType.designator(t), parameters)
+      ScParameterizedType(ScType.designator(t), parameters)
     }.filterByType[ScParameterizedType]
 
   def getCachedClasses(fqn: String): Array[PsiClass] =

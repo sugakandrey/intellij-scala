@@ -21,13 +21,14 @@ import org.jetbrains.plugins.scala.lang.psi.implicits.{ImplicitCollector, ScImpl
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{Parameter, ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 import org.jetbrains.plugins.scala.macroAnnotations.{Cached, CachedWithRecursionGuard, ModCount}
 import org.jetbrains.plugins.scala.project.ProjectPsiElementExt
 import org.jetbrains.plugins.scala.project.ScalaLanguageLevel.Scala_2_11
 import org.jetbrains.plugins.scala.util.SAMUtil
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -237,6 +238,10 @@ object ScExpression {
     def unapply(exp: ScExpression): Option[ScType] = exp.`type`().toOption
   }
 
+  /** Writing it inline inside a value class resuls in scalac error */
+  private def createParameter(tpe: ScType, index: Int): Parameter =
+    Parameter(tpe, isRepeated = false, index = index)
+
   implicit class Ext(private val expr: ScExpression) extends AnyVal {
     private implicit def elementScope: ElementScope = expr.elementScope
 
@@ -275,7 +280,7 @@ object ScExpression {
           val params = unders.zipWithIndex.map {
             case (u, index) =>
               val tpe = u.getNonValueType(ignoreBaseType).getOrAny.inferValueType.unpackedType
-              Parameter(tpe, isRepeated = false, index = index)
+              createParameter(tpe, index)
           }
           val methType =
             ScMethodType(expr.getTypeAfterImplicitConversion(ignoreBaseTypes = ignoreBaseType,

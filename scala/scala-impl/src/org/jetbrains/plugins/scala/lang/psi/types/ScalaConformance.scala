@@ -21,6 +21,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{NonValueType, ScMeth
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, ReplaceWith, Stop}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.resolve.processor.{CompoundTypeCheckSignatureProcessor, CompoundTypeCheckTypeAliasProcessor}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil._
 
@@ -28,7 +29,7 @@ import scala.collection.Seq
 import scala.collection.immutable.HashSet
 
 trait ScalaConformance extends api.Conformance with TypeVariableUnification {
-  typeSystem: api.TypeSystem =>
+  typeSystem: api.TypeSystem[ScType] =>
 
   override protected def conformsComputable(key: Key,
                                             visited: Set[PsiClass]): Computable[ConstraintsResult] =

@@ -10,6 +10,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.imports.ScImportStmt
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.{api => p, types => ptype}
+import org.jetbrains.plugins.scala.lang.typeInference.Scala2Parameter
 
 import scala.collection.immutable.Seq
 import scala.language.postfixOps
@@ -388,13 +389,18 @@ trait TreeAdapter {
     Seq(en.children.collect { case enum: ScEnumerator => enum }.map(toEnumerator).toSeq:_*)
   }
 
-  def toParams(argss: Seq[ScArgumentExprList]): Seq[Seq[m.Term.Param]] = {
-    argss.toStream map { args =>
-      args.matchedParameters.toStream map { case (_, param) =>
-        m.Term.Param(param.psiParam.map(p => convertMods(p.getModifierList)).getOrElse(Seq.empty), toParamName(param), Some(toType(param.paramType)), None)
+  def toParams(argss: Seq[ScArgumentExprList]): Seq[Seq[m.Term.Param]] =
+    argss.toStream.map { args =>
+      args.matchedParameters.toStream.collect {
+        case (_, Scala2Parameter(param)) =>
+          m.Term.Param(
+            param.psiParam.map(p => convertMods(p.getModifierList)).getOrElse(Seq.empty),
+            toParamName(param),
+            Some(toType(param.paramType)),
+            None
+          )
       }
     }
-  }
 
   def expression(tree: Option[ScExpression]): Option[m.Term] = {
     tree match {

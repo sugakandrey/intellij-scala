@@ -14,7 +14,7 @@ final case class JavaArrayType(argument: ScType) extends ValueType {
     elementScope.getCachedClasses("scala.Array").collect {
       case clazz: ScClass => clazz
     }.find(_.getTypeParameters.length == 1)
-      .map(ScalaType.designator)
+      .map(ScType.designator)
       .map(ScParameterizedType(_, Seq(argument)))
   }
 

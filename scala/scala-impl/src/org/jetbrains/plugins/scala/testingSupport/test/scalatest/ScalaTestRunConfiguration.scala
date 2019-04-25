@@ -9,7 +9,7 @@ import org.jetbrains.plugins.scala.extensions.{PsiElementExt, PsiMethodExt, PsiT
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScModifierListOwner
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScTypeDefinition}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
-import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScTypeExt, ScalaType}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType, ScTypeExt, ScalaType}
 import org.jetbrains.plugins.scala.testingSupport.test.AbstractTestRunConfiguration.SettingMap
 import org.jetbrains.plugins.scala.testingSupport.test._
 import org.jetbrains.sbt.shell.SbtShellCommunication
@@ -67,7 +67,7 @@ object ScalaTestRunConfiguration extends SuiteValidityChecker {
               val firstParam = params.head
               val psiManager = ScalaPsiManager.instance
               val mapPsiClass = psiManager.getCachedClass(ProjectScope.getAllScope(project), "scala.collection.immutable.Map").orNull
-              val mapClass = ScalaType.designator(mapPsiClass)
+              val mapClass = ScType.designator(mapPsiClass)
               val paramClass = firstParam.getType.toScType()
               val conformanceType = paramClass match {
                 case parameterizedType: ScParameterizedType => parameterizedType.designator

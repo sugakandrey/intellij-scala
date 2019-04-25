@@ -23,7 +23,7 @@ class ScXmlExprImpl(node: ASTNode) extends ScalaPsiElementImpl (node) with ScXml
   protected override def innerType: TypeResult = {
     def getType(s: String): ScType = {
       val typez = ScalaPsiManager.instance(getProject).getCachedClasses(getResolveScope, s).filter(!_.isInstanceOf[ScObject])
-      if (typez.length != 0) ScalaType.designator(typez(0))
+      if (typez.length != 0) ScType.designator(typez(0))
       else Nothing
     }
 

@@ -13,7 +13,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.expr.{ScBlockExpr, ScExpression}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunctionDeclaration
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScModifierListOwner
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinition
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.psi.types.result.TypeResult
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScTypeExt}
 import org.jetbrains.plugins.scala.project.ProjectContext
@@ -38,7 +38,7 @@ object AnnotatorUtils {
           case b: ScBlockExpr => b.getRBrace.map(_.getPsi).getOrElse(b)
           case _ => expression
         }
-        val (actualText, expText) = ScTypePresentation.different(actual, expected)
+        val (actualText, expText) = TypePresentationUtil.different(actual, expected)
         val annotation = holder.createErrorAnnotation(expr,
           ScalaBundle.message("type.mismatch.found.required", actualText, expText))
         annotation.registerFix(ReportHighlightingErrorQuickFix)
@@ -66,7 +66,7 @@ object AnnotatorUtils {
   def registerTypeMismatchError(actualType: ScType, expectedType: ScType, holder: AnnotationHolder, expression: ScExpression): Unit = {
     //TODO show parameter name
     if (!actualType.conforms(expectedType)) {
-      val (expectedText, actualText) = ScTypePresentation.different(expectedType, actualType)
+      val (expectedText, actualText) = TypePresentationUtil.different(expectedType, actualType)
       val message = ScalaBundle.message("type.mismatch.expected.actual", expectedText, actualText)
       val annotation = holder.createErrorAnnotation(expression, message)
       annotation.registerFix(ReportHighlightingErrorQuickFix)

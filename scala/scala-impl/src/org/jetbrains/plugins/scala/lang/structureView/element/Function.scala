@@ -3,7 +3,7 @@ package org.jetbrains.plugins.scala.lang.structureView.element
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScBlockExpr
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScFunction, ScFunctionDefinition}
-import org.jetbrains.plugins.scala.lang.psi.types.api.ScTypePresentation
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypePresentationUtil
 import org.jetbrains.plugins.scala.lang.structureView.ScalaElementPresentation
 import org.jetbrains.plugins.scala.lang.structureView.element.AbstractItemPresentation.withSimpleNames
 
@@ -23,7 +23,7 @@ private class Function(function: ScFunction, inherited: Boolean, override val sh
       if (function.isConstructor) None
       else function.returnTypeElement match {
         case Some(_) => None
-        case None => if (showType) function.returnType.toOption.map(ScTypePresentation.withoutAliases) else None
+        case None => if (showType) function.returnType.toOption.map(TypePresentationUtil.withoutAliases) else None
       }
 
     withSimpleNames(presentation + inferredType.map(": " + _).mkString)

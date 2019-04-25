@@ -2,6 +2,7 @@ package org.jetbrains.plugins.scala.lang.psi.types
 package api
 
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.NonValueType
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**

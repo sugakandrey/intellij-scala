@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
   * @author adkozlov
   */
 trait PsiTypeBridge {
-  typeSystem: TypeSystem =>
+  typeSystem: TypeSystem[_] =>
 
   /**
     * @param treatJavaObjectAsAny if true, and paramTopLevel is true, java.lang.Object is treated as scala.Any
@@ -47,9 +47,11 @@ trait PsiTypeBridge {
     case wildcardType: PsiCapturedWildcardType =>
       toScType(wildcardType.getWildcard, treatJavaObjectAsAny)
     case intersectionType: PsiIntersectionType =>
-      typeSystem.andType(intersectionType.getConjuncts.map {
-        toScType(_, treatJavaObjectAsAny)
-      })
+      ScCompoundType(
+        intersectionType.getConjuncts.map(
+          toScType(_, treatJavaObjectAsAny)
+        )
+      )
     case _ => throw new IllegalArgumentException(s"psi type ${`type`} should not be converted to ${typeSystem.name} type")
   }
 

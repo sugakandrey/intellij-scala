@@ -1,6 +1,11 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
 import com.intellij.psi.PsiTypeParameter
+<<<<<<< HEAD
+=======
+import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
+>>>>>>> Parameterise shared Scala/Dotty models w/ Tpe type parameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**

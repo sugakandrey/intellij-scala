@@ -10,10 +10,10 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateBody
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.SyntheticClasses
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScTypeUtil
+import org.jetbrains.plugins.scala.lang.typeInference.ScalaParameter
 import org.jetbrains.plugins.scala.project.{ProjectContext, ProjectContextOwner}
 
 /**
@@ -42,7 +42,7 @@ object PresentationUtil {
         buffer.append(")")
         buffer.toString()
       case param: ScParameter => ScalaDocumentationProvider.parseParameter(param)(presentationString(_, substitutor))
-      case param: Parameter =>
+      case param: ScalaParameter =>
         val builder = new StringBuilder
         builder.append(param.name)
         builder.append(": " + presentationString(param.paramType, substitutor))

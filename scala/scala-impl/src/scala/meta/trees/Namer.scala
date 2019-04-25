@@ -11,9 +11,9 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScObject, ScTe
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticFunction
 import org.jetbrains.plugins.scala.lang.psi.types.api.StdType
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.Parameter
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaTypeVisitor}
 import org.jetbrains.plugins.scala.lang.psi.{impl, api => p, types => ptype}
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.language.postfixOps
 //import scala.meta.internal.ast.Type
