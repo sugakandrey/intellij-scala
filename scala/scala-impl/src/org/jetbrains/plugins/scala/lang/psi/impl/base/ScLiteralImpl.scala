@@ -23,6 +23,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.base.{ScInterpolatedStringLitera
 import org.jetbrains.plugins.scala.lang.psi.impl.expr.ScExpressionImplBase
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.result._
+import org.jetbrains.plugins.scala.lang.typeInference.ConstantTag
 import org.jetbrains.plugins.scala.macroAnnotations.CachedInUserData
 
 import scala.StringContext.InvalidEscapeException
@@ -43,7 +44,7 @@ class ScLiteralImpl(node: ASTNode) extends ScExpressionImplBase(node)
     val node = getFirstChild.getNode
     if (node.getElementType == ScalaTokenTypes.kNULL) Right(api.Null)
     else {
-      ScLiteralType.kind(getFirstChild.getNode, this) match {
+      ConstantTag.fromAstNode(getFirstChild.getNode) match {
         case None => Failure(ScalaBundle.message("wrong.psi.for.literal.type", getText))
         case Some(kind) => Right(ScLiteralType(getValue, kind))
       }
@@ -209,11 +210,11 @@ class ScLiteralImpl(node: ASTNode) extends ScExpressionImplBase(node)
   def getTypeForNullWithoutImplicits: Option[ScType] = {
     typeWithoutImplicits
   }
-  
+
   /*
    * This part caches literal related annotation owners
-   * todo: think about extracting this feature to a trait  
-   * 
+   * todo: think about extracting this feature to a trait
+   *
    * trait AnnotationBasedInjectionHost {
    *   private[this] var myAnnotationOwner: Option[PsiAnnotationOwner] = None
    *   ...
@@ -223,21 +224,21 @@ class ScLiteralImpl(node: ASTNode) extends ScExpressionImplBase(node)
    *   def needCaching(): Boolean
    * }
    */
-  
+
   private[this] var myAnnotationOwner: Option[PsiAnnotationOwner with PsiElement] = None
   private[this] var expirationTime = 0L
-  
-  private val expTimeLengthGenerator: Random = new Random(System.currentTimeMillis()) 
-  
-  
+
+  private val expTimeLengthGenerator: Random = new Random(System.currentTimeMillis())
+
+
   def getAnnotationOwner(annotationOwnerLookUp: ScLiteral => Option[PsiAnnotationOwner with PsiElement]): Option[PsiAnnotationOwner] = {
     if (!isString) return None
-    
+
     if (System.currentTimeMillis() > expirationTime || myAnnotationOwner.exists(!_.isValid)) {
       myAnnotationOwner = annotationOwnerLookUp(this)
       expirationTime = System.currentTimeMillis() + (2 + expTimeLengthGenerator.nextInt(8))*1000
     }
-    
+
     myAnnotationOwner
   }
 }
