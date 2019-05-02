@@ -24,7 +24,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScObj
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.SyntheticClasses
 import org.jetbrains.plugins.scala.lang.psi.impl.{ScalaPsiElementFactory, ScalaPsiManager}
 import org.jetbrains.plugins.scala.lang.psi.light.PsiClassWrapper
-import org.jetbrains.plugins.scala.lang.psi.types.api.StdTypes
+import org.jetbrains.plugins.scala.lang.psi.types.ScStdTypes
 import org.jetbrains.plugins.scala.lang.resolve.{ResolveUtils, ScalaResolveResult}
 
 import scala.collection.JavaConverters
@@ -138,7 +138,7 @@ object ScalaClassNameCompletionContributor {
       result.addAllElements(lookups.asJava)
     }
 
-    val QualNameToType = StdTypes.instance.QualNameToType
+    val QualNameToType = ScStdTypes.instance.QualNameToType
     for {
       clazz <- SyntheticClasses.get(project).all.valuesIterator
       if !QualNameToType.contains(clazz.qualifiedName)

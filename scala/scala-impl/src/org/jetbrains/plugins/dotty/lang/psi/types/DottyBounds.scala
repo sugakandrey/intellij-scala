@@ -1,17 +1,14 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
 import org.jetbrains.plugins.dotty.lang.core.types.DotType
-import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Bounds, TypeSystem}
 
-/**
-  * @author adkozlov
-  */
-trait DottyBounds extends Bounds {
+trait DottyBounds extends Bounds[DotType] {
   typeSystem: TypeSystem[DotType] =>
 
-  override def glb(first: ScType, second: ScType, checkWeak: Boolean): ScType = ???
-  override def glb(types: Seq[ScType], checkWeak: Boolean): ScType = ???
-  override def lub(first: ScType, second: ScType, checkWeak: Boolean): ScType = ???
-  override def lub(types: Seq[ScType], checkWeak: Boolean): ScType = ???
+  override def lub(types: Seq[DotType], checkWeak: Boolean): DotType = ???
+  override def glb(types: Seq[DotType], checkWeak: Boolean): DotType = ???
+
+  override def glb(first: DotType, second: DotType, checkWeak: Boolean): DotType = ???
+  override def lub(first: DotType, second: DotType, checkWeak: Boolean): DotType = ???
 }

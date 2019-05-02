@@ -13,7 +13,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorTyp
 
 object Types {
   def valueOf(aType: ScType): Any = {
-    val stdTypes = aType.projectContext.stdTypes
+    val stdTypes = aType.projectContext.typeSystem
     import stdTypes._
 
     aType match {

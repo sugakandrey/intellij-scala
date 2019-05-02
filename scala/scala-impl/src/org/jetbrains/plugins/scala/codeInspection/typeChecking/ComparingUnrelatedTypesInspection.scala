@@ -50,7 +50,7 @@ object ComparingUnrelatedTypesInspection {
   }
 
   private def isNumericType(`type`: ScType): Boolean = {
-    val stdTypes = `type`.projectContext.stdTypes
+    val stdTypes = `type`.projectContext.typeSystem
     import stdTypes._
 
     `type` match {

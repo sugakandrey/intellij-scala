@@ -763,7 +763,7 @@ object ScalaPsiElementFactory {
   }
 
   def getStandardValue(`type`: ScType): String = {
-    val stdTypes = `type`.projectContext.stdTypes
+    val stdTypes = `type`.typeSystem
     import stdTypes._
 
     `type` match {

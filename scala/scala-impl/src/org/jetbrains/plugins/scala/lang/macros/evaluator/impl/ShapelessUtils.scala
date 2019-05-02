@@ -3,8 +3,8 @@ import org.jetbrains.plugins.scala.extensions.PsiElementExt
 import org.jetbrains.plugins.scala.lang.macros.evaluator.MacroContext
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScClass
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, StdTypes}
-import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.ParameterizedType
+import org.jetbrains.plugins.scala.lang.psi.types.{ScParameterizedType, ScType, ScStdTypes}
 
 trait ShapelessUtils {
 
@@ -24,7 +24,7 @@ trait ShapelessUtils {
     */
   protected def extractTargetType(context: MacroContext): ScType = context.expectedType.get match {
     case t: ScParameterizedType => t.typeArguments.head
-    case _ => StdTypes.instance(context.place.projectContext).Any
+    case _ => ScStdTypes.instance(context.place.projectContext).Any
   }
 
   private def extractFiledsFromClass(c: ScClass):Seq[(String, ScType)] = {

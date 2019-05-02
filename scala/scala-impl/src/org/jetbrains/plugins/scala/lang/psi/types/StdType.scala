@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.scala.lang.psi.types.api
+package org.jetbrains.plugins.scala.lang.psi.types
 
 import java.util.concurrent.atomic.AtomicReference
 
@@ -7,7 +7,7 @@ import com.intellij.psi.CommonClassNames._
 import org.jetbrains.plugins.scala.extensions.PsiClassExt
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScObject
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.{ScSyntheticClass, SyntheticClasses}
-import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintSystem, ConstraintsResult, LeafType, NamedType, ScType, ScTypeExt}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeVisitor, ValueType}
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 sealed class StdType(val name: String, val tSuper: Option[StdType])
@@ -53,12 +53,12 @@ object StdType {
 }
 
 sealed class ValType(override val name: String)(implicit projectContext: ProjectContext)
-  extends StdType(name, Some(StdTypes.instance.AnyVal)) with LeafType {
+  extends StdType(name, Some(ScStdTypes.instance.AnyVal)) with LeafType {
 
   override def isFinalType = true
 }
 
-class StdTypes(implicit private val projectContext: ProjectContext) extends ProjectComponent {
+class ScStdTypes(implicit private val projectContext: ProjectContext) extends ProjectComponent {
 
   lazy val Any = new StdType("Any", None)
 
@@ -119,18 +119,18 @@ class StdTypes(implicit private val projectContext: ProjectContext) extends Proj
   )
 
   override def disposeComponent(): Unit = {
-    StdTypes.current.compareAndSet(this, null)
+    ScStdTypes.current.compareAndSet(this, null)
   }
 }
 
-object StdTypes {
-  private val current = new AtomicReference[StdTypes]()
+object ScStdTypes {
+  private val current = new AtomicReference[ScStdTypes]()
 
-  def instance(implicit pc: ProjectContext): StdTypes = {
+  def instance(implicit pc: ProjectContext): ScStdTypes = {
     val last = current.get()
     if (last != null && (last.projectContext == pc)) last
     else {
-      val fromContainer = pc.getComponent(classOf[StdTypes])
+      val fromContainer = pc.getComponent(classOf[ScStdTypes])
       current.compareAndSet(last, fromContainer)
       fromContainer
     }

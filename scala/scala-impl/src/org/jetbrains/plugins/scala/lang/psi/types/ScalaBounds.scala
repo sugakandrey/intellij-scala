@@ -22,7 +22,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-trait ScalaBounds extends api.Bounds {
+trait ScalaBounds extends api.Bounds[ScType] {
   typeSystem: api.TypeSystem[ScType] =>
 
   import ScalaBounds._

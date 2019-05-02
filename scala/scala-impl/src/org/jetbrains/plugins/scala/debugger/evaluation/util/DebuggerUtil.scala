@@ -89,7 +89,7 @@ object DebuggerUtil {
   }
 
   def getJVMQualifiedName(tp: ScType): JVMName = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -127,7 +127,7 @@ object DebuggerUtil {
   }
 
   def getJVMStringForType(tp: ScType, isParam: Boolean = true): String = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -236,7 +236,7 @@ object DebuggerUtil {
       case p: ScParameter if p.isCallByNameParameter => "Lscala/Function0;"
       case _ => getJVMStringForType(subst(param.`type`().getOrAny))
     }
-  
+
   def createValue(vm: VirtualMachineProxyImpl, tp: ScType, b: Boolean): Value = {
     tp match {
       case _ if tp.isBoolean => vm.mirrorOf(b)
@@ -246,7 +246,7 @@ object DebuggerUtil {
   }
 
   def createValue(vm: VirtualMachineProxyImpl, tp: ScType, b: Long): Value = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -263,7 +263,7 @@ object DebuggerUtil {
   }
 
   def createValue(vm: VirtualMachineProxyImpl, tp: ScType, b: Char): Value = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -280,7 +280,7 @@ object DebuggerUtil {
   }
 
   def createValue(vm: VirtualMachineProxyImpl, tp: ScType, b: Double): Value = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -297,7 +297,7 @@ object DebuggerUtil {
   }
 
   def createValue(vm: VirtualMachineProxyImpl, tp: ScType, b: Float): Value = {
-    val stdTypes = tp.projectContext.stdTypes
+    val stdTypes = tp.projectContext.typeSystem
     import stdTypes._
 
     tp match {
@@ -441,7 +441,7 @@ object DebuggerUtil {
     fun.body match { //to exclude references from default parameters
       case Some(b) => localParams(b, fun, container, visited)
       case _ => Seq.empty
-    } 
+    }
   }
 
   def localParamsForConstructor(cl: ScClass, visited: mutable.Set[PsiElement] = mutable.Set.empty): Seq[ScTypedDefinition] = {

@@ -6,7 +6,7 @@ import org.jetbrains.plugins.scala.extensions.{PsiClassExt, PsiElementExt, PsiPa
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScPrimaryConstructor
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScClassParameter
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScClass
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ExtractClass, ValType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.ExtractClass
 
 /**
  * Nikolay.Tropin

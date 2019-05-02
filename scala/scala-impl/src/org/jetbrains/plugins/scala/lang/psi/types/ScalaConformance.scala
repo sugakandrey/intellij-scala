@@ -524,9 +524,6 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
       if (result != null) return
 
       if (checkWeak && r.isInstanceOf[ValType]) {
-        val stdTypes = StdTypes.instance
-        import stdTypes._
-
         (r, x) match {
           case (Byte, Short | Int | Long | Float | Double) =>
             result = constraints

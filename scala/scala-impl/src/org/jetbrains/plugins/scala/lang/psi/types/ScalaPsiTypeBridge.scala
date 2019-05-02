@@ -17,7 +17,7 @@ import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 
 import scala.collection.JavaConverters._
 
-trait ScalaPsiTypeBridge extends api.PsiTypeBridge {
+trait ScalaPsiTypeBridge extends api.PsiTypeBridge[ScType] {
   typeSystem: api.TypeSystem[ScType] =>
 
   override def toScType(psiType: PsiType,
@@ -95,7 +95,36 @@ trait ScalaPsiTypeBridge extends api.PsiTypeBridge {
       val (maybeLower, maybeUpper) = bounds(wildcardType, paramTopLevel = false)
       ScExistentialType(createParameter(maybeLower, maybeUpper))
     case _: PsiDisjunctionType => Any
-    case _ => super.toScType(psiType, treatJavaObjectAsAny)
+      case arrayType: PsiArrayType =>
+      JavaArrayType(arrayType.getComponentType.toScType())
+    case PsiType.VOID    => Unit
+    case PsiType.BOOLEAN => Boolean
+    case PsiType.CHAR    => Char
+    case PsiType.BYTE    => Byte
+    case PsiType.SHORT   => Short
+    case PsiType.INT     => Int
+    case PsiType.LONG    => Long
+    case PsiType.FLOAT   => Float
+    case PsiType.DOUBLE  => Double
+    case PsiType.NULL    => Null
+    case null            => Any
+    case diamondType: PsiDiamondType =>
+      diamondType.resolveInferredTypes().getInferredTypes.asScala.toList.map {
+        toScType(_, treatJavaObjectAsAny)
+      } match {
+        case Nil if paramTopLevel && treatJavaObjectAsAny => Any
+        case Nil => AnyRef
+        case head :: _ => head
+      }
+    case wildcardType: PsiCapturedWildcardType =>
+      toScType(wildcardType.getWildcard, treatJavaObjectAsAny)
+    case intersectionType: PsiIntersectionType =>
+      ScCompoundType(
+        intersectionType.getConjuncts.map(
+          toScType(_, treatJavaObjectAsAny)
+        )
+      )
+    case tpe => throw new IllegalArgumentException(s"psi type $tpe should not be converted to ${typeSystem.name} type")
   }
 
   private def createParameter(maybeLower: Option[ScType],
