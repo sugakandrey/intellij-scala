@@ -298,6 +298,6 @@ object MethodInvocationImpl {
     override def typeResult: TypeResult = full.typeResult
   }
 
-  private case class FailureCase(typeResult: Left[Failure, ScType]) extends InvocationData
+  private case class FailureCase(typeResult: Either[Failure, ScType]) extends InvocationData
 
 }

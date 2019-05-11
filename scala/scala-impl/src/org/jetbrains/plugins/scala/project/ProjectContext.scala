@@ -4,8 +4,8 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.{PsiElement, PsiManager}
 import org.jetbrains.plugins.scala.lang.psi.ElementScope
-import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaTypeSystem}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{StdTypes, TypeSystem}
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
+import org.jetbrains.plugins.scala.lang.psi.types.{ScStdTypes, ScType, ScalaTypeSystem}
 
 import scala.language.implicitConversions
 
@@ -14,7 +14,7 @@ import scala.language.implicitConversions
   * 19-Apr-17
   */
 class ProjectContext(val project: Project) extends AnyVal {
-  def stdTypes: StdTypes = StdTypes.instance(this)
+  def stdTypes: ScStdTypes = ScStdTypes.instance(this)
 
   def typeSystem: TypeSystem[ScType] = ScalaTypeSystem.instance(project)
 }

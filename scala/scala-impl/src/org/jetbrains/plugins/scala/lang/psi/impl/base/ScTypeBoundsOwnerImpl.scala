@@ -9,16 +9,14 @@ import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.annotator.ScTypeBoundsOwnerAnnotator
 import org.jetbrains.plugins.scala.lang.psi.api.base.types.ScTypeElement
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypeBoundsOwner
+import org.jetbrains.plugins.scala.lang.psi.types.ScType
 import org.jetbrains.plugins.scala.lang.psi.types.result._
-import org.jetbrains.plugins.scala.lang.psi.types.{ScType, api}
 
 trait ScTypeBoundsOwnerImpl extends ScTypeBoundsOwner with ScTypeBoundsOwnerAnnotator {
 
-  def lowerBound: TypeResult = typeOf(lowerTypeElement, isLower = true)
+  def lowerBound: TypeResult = typeSystem.extractTypeBound(this, isLower = true).asSc
 
-  def upperBound: TypeResult = typeOf(upperTypeElement, isLower = false)
-
-  protected def extractBound(in: ScType, isLower: Boolean): ScType = in
+  def upperBound: TypeResult = typeSystem.extractTypeBound(this, isLower = false).asSc
 
   override def viewBound: Seq[ScType] = viewTypeElement.flatMap(_.`type`().toOption)
 
@@ -72,10 +70,4 @@ trait ScTypeBoundsOwnerImpl extends ScTypeBoundsOwner with ScTypeBoundsOwnerAnno
     }
     node.getTreeParent.removeRange(node, null)
   }
-
-  private def typeOf(typeElement: Option[ScTypeElement], isLower: Boolean): TypeResult =
-    typeElement match {
-      case Some(elem) => elem.`type`().map(extractBound(_, isLower))
-      case None => Right(if (isLower) api.Nothing else api.Any)
-    }
 }

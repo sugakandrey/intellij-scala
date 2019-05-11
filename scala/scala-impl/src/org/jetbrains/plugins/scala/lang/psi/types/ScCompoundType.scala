@@ -130,7 +130,7 @@ final case class ScCompoundType private (
 object ScCompoundType {
   def apply(
     components:   Seq[ScType],
-    signatureMap: Map[TermSignature, ScType]          = Map.empty,
+    signatureMap: Map[TermSignature, ScType]      = Map.empty,
     typesMap:     Map[String, TypeAliasSignature] = Map.empty
   )(implicit projectContext: ProjectContext): ScCompoundType = {
     val (comps, sigs, types) =

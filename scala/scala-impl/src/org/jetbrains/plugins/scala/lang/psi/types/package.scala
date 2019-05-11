@@ -1,6 +1,7 @@
 package org.jetbrains.plugins.scala.lang.psi
 
 import com.intellij.psi._
+import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.TypeParamIdOwner
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScTypeAlias, ScTypeAliasDefinition}
@@ -19,6 +20,10 @@ import scala.util.control.NoStackTrace
   * @author adkozlov
   */
 package object types {
+  implicit class ScalaTypeSeqExt(private val tpes: Seq[ScalaType]) extends AnyVal {
+    def sc: Seq[ScType]   = tpes.asInstanceOf[Seq[ScType]]
+    def dot: Seq[DotType] = tpes.asInstanceOf[Seq[DotType]]
+  }
 
   implicit class ScalaTypeExt(private val tpe: ScalaType) extends AnyVal {
     def canonicalText: String = tpe.typeSystem.canonicalText(tpe)
@@ -27,6 +32,7 @@ package object types {
       tpe.typeSystem.presentableText(tpe, withPrefix = true)
 
     def urlText: String = tpe.typeSystem.urlText(tpe)
+
   }
 
   implicit class ScTypeExt(val scType: ScType) extends AnyVal {

@@ -7,7 +7,6 @@ package expr
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi._
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.IncorrectOperationException
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
@@ -67,9 +66,9 @@ class ScSuperReferenceImpl(node: ASTNode) extends ScExpressionImplBase(node) wit
     if (id == null) None else findSuper(id)
   }
 
-  def staticSuperName = Option(findChildByType[PsiElement](ScalaTokenTypes.tIDENTIFIER)).map(_.getText).getOrElse("")
+  def staticSuperName: String = Option(findChildByType[PsiElement](ScalaTokenTypes.tIDENTIFIER)).map(_.getText).getOrElse("")
 
-  override def getReference = {
+  override def getReference: PsiReference = {
     val id = findChildByType[PsiElement](ScalaTokenTypes.tIDENTIFIER)
     if (id == null) null else new PsiReference {
       def getElement: ScSuperReferenceImpl = ScSuperReferenceImpl.this
@@ -156,7 +155,7 @@ class ScSuperReferenceImpl(node: ASTNode) extends ScExpressionImplBase(node) wit
         case clazz: PsiClass => Some(clazz.getSuperTypes.map(_.toScType()))
         case _               => None
       }
-    case None => ResolveUtils.enclosingTypeDef(this).map(_.extendsBlock.superTypes)
+    case None => ResolveUtils.enclosingTemplateDef(this).map(_.extendsBlock.superTypes)
   }
 
   protected override def innerType = Failure("Cannot infer type of `super' expression")

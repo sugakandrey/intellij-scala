@@ -14,7 +14,8 @@ final class ScalaTypeSystem private (implicit val projectContext: ProjectContext
     with ScalaBounds
     with ScalaPsiTypeBridge
     with ScalaTypePresentation
-    with ScalaStdTypes {
+    with ScalaStdTypes
+    with ScalaTyper {
 
   override val name = "Scala"
 }

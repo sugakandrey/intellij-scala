@@ -29,9 +29,8 @@ trait ScTypeAliasDefinition extends ScTypeAlias {
       _.`type`()
     }.getOrElse(Failure("No alias type"))
 
-  def lowerBound: TypeResult = aliasedType
-
-  def upperBound: TypeResult = aliasedType
+  override def lowerTypeElement: Option[ScTypeElement] = aliasedTypeElement
+  override def upperTypeElement: Option[ScTypeElement] = aliasedTypeElement
 
   def isExactAliasFor(cls: PsiClass): Boolean = {
     val isDefinedInObject = containingClass match {

@@ -427,7 +427,7 @@ object ScExpression {
         case _ => return None
       }
 
-      val stdTypes = StdTypes.instance
+      val stdTypes = expected.typeSystem
       import stdTypes._
 
       expected.removeAbstracts match {
@@ -461,7 +461,7 @@ object ScExpression {
         case (Some(left), Some(right)) => (left, right)
         case _ => return None
       }
-      val stdTypes = project.stdTypes
+      val stdTypes = valueType.typeSystem
       import stdTypes._
 
       (l, r) match {
@@ -486,8 +486,8 @@ object ScExpression {
     }
 
     @tailrec
-    private def getStdType(t: ScType): Option[StdType] = {
-      val stdTypes = project.stdTypes
+    private def getStdType(t: ScType): Option[ScType] = {
+      val stdTypes = t.typeSystem
       import stdTypes._
 
       t match {

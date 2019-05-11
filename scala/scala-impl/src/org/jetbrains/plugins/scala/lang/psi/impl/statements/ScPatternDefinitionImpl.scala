@@ -39,13 +39,9 @@ final class ScPatternDefinitionImpl private[psi](stub: ScPropertyStub[ScPatternD
   def `type`(): TypeResult = typeElement match {
     case Some(te) => te.`type`()
     case _ =>
-      expr.toRight {
-        new Failure("Cannot infer type without an expression")
-      }.flatMap {
-        _.`type`()
-      }.map {
+      expr.flatMapType.map {
         case literalType: ScLiteralType if this.hasFinalModifier => literalType
-        case t => ScLiteralType.widenRecursive(t)
+        case t                                                   => ScLiteralType.widenRecursive(t)
       }
   }
 

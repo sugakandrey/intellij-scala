@@ -8,16 +8,14 @@ import org.jetbrains.plugins.scala.lang.psi.api.expr._
 import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScObject, ScTemplateDefinition}
+import org.jetbrains.plugins.scala.lang.psi.impl
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticFunction
-import org.jetbrains.plugins.scala.lang.psi.types.api.StdType
-import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaTypeVisitor}
-import org.jetbrains.plugins.scala.lang.psi.{impl, api => p, types => ptype}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaTypeVisitor, StdType}
 import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.language.postfixOps
 //import scala.meta.internal.ast.Type
-import scala.meta.internal.{semantic => h}
 import scala.meta.trees.error._
 import scala.{meta => m, Seq => _}
 

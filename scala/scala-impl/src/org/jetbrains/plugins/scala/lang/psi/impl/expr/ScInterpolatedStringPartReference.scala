@@ -2,13 +2,12 @@ package org.jetbrains.plugins.scala
 package lang.psi.impl.expr
 
 import com.intellij.lang.ASTNode
-import com.intellij.psi.{PsiElement, PsiPolyVariantReference, ResolveResult}
+import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.scala.lang.psi.api.base.{ScInterpolatedStringLiteral, ScReference}
-import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 
 /**
- * @author kfeodorov 
+ * @author kfeodorov
  * @since 15.03.14.
  */
 class ScInterpolatedStringPartReference(node: ASTNode) extends ScReferenceExpressionImpl(node) {

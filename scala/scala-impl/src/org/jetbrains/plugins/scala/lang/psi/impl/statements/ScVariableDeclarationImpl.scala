@@ -26,7 +26,7 @@ final class ScVariableDeclarationImpl private[psi](stub: ScPropertyStub[ScVariab
 
   override def toString: String = "ScVariableDeclaration: " + ifReadAllowed(declaredNames.mkString(", "))("")
 
-  def `type`(): TypeResult = this.flatMapType(typeElement)
+  def `type`(): TypeResult = typeElement.flatMapType
 
   def declaredElements: Seq[ScFieldId] = getIdList.fieldIds
 

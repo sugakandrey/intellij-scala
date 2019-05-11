@@ -9,6 +9,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi._
 import com.intellij.psi.search.{LocalSearchScope, SearchScope}
 import javax.swing.Icon
+import org.jetbrains.plugins.dotty.lang.core.types.{DotHKTypeLambda, DotType}
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.icons.Icons
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes._
@@ -23,7 +24,7 @@ import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.PsiClassFake
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.JavaIdentifier
 import org.jetbrains.plugins.scala.lang.psi.stubs.ScTypeParamStub
 import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameterType}
-import org.jetbrains.plugins.scala.lang.psi.types.{AliasType, ScType, ScTypeExt}
+import org.jetbrains.plugins.scala.lang.psi.types.{AliasType, ScType, ScTypeExt, ScalaType}
 import org.jetbrains.plugins.scala.macroAnnotations.{Cached, ModCount}
 
 import scala.annotation.tailrec
@@ -42,30 +43,6 @@ class ScTypeParamImpl private (stub: ScTypeParamStub, node: ASTNode)
   def this(stub: ScTypeParamStub) = this(stub, null)
 
   override lazy val typeParamId: Long = reusableId(this)
-
-  @tailrec
-  final override protected def extractBound(in: ScType, isLower: Boolean): ScType = {
-    typeParametersClause match {
-      case Some(pClause: ScTypeParamClause) =>
-        val tParams = pClause.typeParameters
-        in match {
-          case ParameterizedType(des, params) =>
-            if (params.length == tParams.length && params.forall(_.isInstanceOf[TypeParameterType]) &&
-              params.map(_.asInstanceOf[TypeParameterType].psiTypeParameter) == tParams) {
-              des
-            } else {
-              //here we should actually construct existential type for partial application
-              in
-            }
-          case t => t.isAliasType match {
-            case Some(AliasType(_: ScTypeAliasDefinition, Right(lower), _)) if isLower => extractBound(lower, isLower)
-            case Some(AliasType(_: ScTypeAliasDefinition, _, Right(upper))) if !isLower => extractBound(upper, isLower)
-            case None => t
-          }
-        }
-      case _ => in
-    }
-  }
 
   override def toString: String = "TypeParameter: " + ifReadAllowed(name)("")
 

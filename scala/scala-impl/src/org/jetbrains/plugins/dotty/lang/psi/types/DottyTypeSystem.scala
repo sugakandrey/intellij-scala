@@ -16,7 +16,8 @@ final class DottyTypeSystem private (implicit val projectContext: ProjectContext
     with DottyBounds
     with DottyPsiTypeBridge
     with DottyTypePresentation
-    with DottyStdTypes {
+    with DottyStdTypes
+    with DottyTyper {
 
   override val name = "Dotty"
 }

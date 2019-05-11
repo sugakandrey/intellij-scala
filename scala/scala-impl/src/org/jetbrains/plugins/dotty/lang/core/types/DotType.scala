@@ -1,9 +1,10 @@
 package org.jetbrains.plugins.dotty.lang.core
 package types
 
+import org.jetbrains.plugins.dotty.lang.core.symbols.{Symbol, TemplateDefSymbol, TermSymbol, TypeSymbol}
 import org.jetbrains.plugins.dotty.lang.core.types.api._
-import org.jetbrains.plugins.dotty.lang.psi.types.{DottyTypePresentation, DottyTypeSystem}
-import org.jetbrains.plugins.scala.lang.psi.types.{ScalaType, TypePresentationContext}
+import org.jetbrains.plugins.dotty.lang.psi.types.DottyTypeSystem
+import org.jetbrains.plugins.scala.lang.psi.types.ScalaType
 import org.jetbrains.plugins.scala.lang.typeInference.{DotParameter, DotTypeParameter}
 
 /**
@@ -36,7 +37,7 @@ sealed trait DotProxyType extends DotType {
 
 sealed trait DotNamedType extends DotProxyType {
   def prefix: DotType
-  def designator: Designator
+  def designator: Symbol
 }
 
 /** The type of an empty prefix */
@@ -56,11 +57,21 @@ case object DotNoPrefix extends DotGroundType
   */
 final case class DotTypeRef private (
   override val prefix:     DotType,
-  override val designator: Designator
+  override val designator: TypeSymbol
 ) extends DotTypeRefApi with DotNamedType
+
+object DotTypeRef {
+  def apply(tparam: DotTypeParameter): DotTypeRef = DotTypeRef(DotNoPrefix, ???)
+}
 
 /** Marker trait for types, populated with a single value (e.g. 1.type or x.type). */
 sealed trait DotSingletonType extends DotProxyType
+
+/** Marker trait for types that can be types of values or that are higher-kinded */
+sealed trait DotValueType extends DotType
+
+/** Marker trait for types that apply only to [[TypeSymbol]]s */
+sealed trait DotTypeType extends DotType
 
 /**
   * A type, representing a reference to some term, e.g.
@@ -74,7 +85,7 @@ sealed trait DotSingletonType extends DotProxyType
   *
   * @param designator Term element, which is being referenced by this type.
   */
-final case class DotTermRef private (override val prefix: DotType, override val designator: Designator)
+final case class DotTermRef private (override val prefix: DotType, override val designator: TermSymbol)
     extends DotTermRefApi
     with DotNamedType
     with DotSingletonType
@@ -84,16 +95,16 @@ final case class DotTermRef private (override val prefix: DotType, override val 
   *
   * @param thisElement An element representing template definition `C`.
   */
-final case class DotThisType private (thisElement: ClassDenotation) extends DotThisTypeApi with DotSingletonType
+final case class DotThisType private (thisElement: TemplateDefSymbol) extends DotThisTypeApi with DotSingletonType
 
 /**
-  * The type of a super reference, e.g. `C.super.type`
+  * The type of a super reference, e.g. `C.super[SuperClass]`
   *
   * @param thisRef  An element, representing template definition `C`
   * @param superRef The type of a value referenced by `super`
   */
 final case class DotSuperType(
-  thisRef:  ClassDenotation,
+  thisRef:  TemplateDefSymbol,
   superRef: DotType
 ) extends DotSingletonType {
   override def underlying: DotType = superRef
@@ -111,18 +122,18 @@ object DotConstantType {
   * @param parent The type being refined
   */
 final case class DotRefinedType(
-  parent:      DotType,
+  parent:     DotType,
   refinement: Refinement
 ) extends DotRefinedTypeApi with DotProxyType
 
 /** A type application of form [[tycon]][T_1, T_2, ... T_n]. */
 final case class DotAppliedType(
   tycon: DotType,
-  args:  List[DotType]
+  args:  Seq[DotType]
 ) extends DotAppliedTypeApi with DotProxyType
 
 /** Internal type bounds representation `T` <: [[hi]] >: [[lo]] */
-class DotTypeBounds(val lo: DotType, val hi: DotType) extends DotTypeBoundsApi with DotProxyType {
+class DotTypeBounds(val lo: DotType, val hi: DotType) extends DotTypeBoundsApi with DotProxyType with DotTypeType {
   final def get: DotTypeBounds = this
   final def isEmpty: Boolean   = false
   final def _1: DotType        = lo
@@ -138,7 +149,6 @@ object DotTypeBounds {
 final case class DotAliasType(aliased: DotType) extends DotTypeBounds(aliased, aliased) with DotAliasTypeApi
 
 final case class DotTypeVar(paramRef: DotTypeParameter) extends DotTypeVarApi with DotProxyType
-
 
 /**
   * Base super type for all ground (as opposed to proxy) types in Dotty.
@@ -170,7 +180,7 @@ final case class DotMethodType private (params: Seq[DotParameter], resTpe: DotTy
     with DotLambdaType
     with DotGroundType
 
-/** Type of by-name parameter : =>[[resTpe]] or method w/o parameter lists */
+/** Type of by-name parameter : =>[[resTpe]] or method w/o parameter lists `def f: resTpe`*/
 final case class DotExprType private (resTpe: DotType)
   extends DotProxyType
     with DotExprTypeApi
@@ -187,6 +197,12 @@ final case class DotHKTypeLambda private (tparams: Seq[DotTypeParameter], resTpe
     with DotLambdaType
     with DotProxyType
 
+object DotHKTypeLambda {
+  def apply(params: Seq[DotTypeParameter], resTpe: DotType): DotType =
+    if (params.isEmpty) resTpe
+    else                new DotHKTypeLambda(params, resTpe)
+}
+
 /**
   * Type of the form [[scrutinee]] <: [[bound]] match { case_1, ... case_n }
   * where `case_i` is of shape [X1, .. Xn] => P => R
@@ -194,3 +210,7 @@ final case class DotHKTypeLambda private (tparams: Seq[DotTypeParameter], resTpe
 final case class DotMatchType private (scrutinee: DotType, bound: DotType, cases: List[DotType])
     extends DotMatchTypeApi
     with DotProxyType
+
+final case class DotTemplateInfo private() extends DotTemplateInfoApi with DotGroundType with DotTypeType
+
+// TODO: RecType, RecThis, Skolems, LazyRef ???

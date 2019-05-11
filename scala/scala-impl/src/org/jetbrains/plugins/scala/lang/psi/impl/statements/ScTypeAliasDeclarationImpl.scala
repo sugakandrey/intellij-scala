@@ -25,7 +25,7 @@ import org.jetbrains.plugins.scala.lang.psi.stubs.ScTypeAliasStub
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, Nothing}
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 
-/** 
+/**
 * @author Alexander Podkhalyuzin
 * Date: 22.02.2008
 * Time: 9:54:54
@@ -49,18 +49,10 @@ class ScTypeAliasDeclarationImpl private (stub: ScTypeAliasStub, node: ASTNode)
     case null => createIdentifier(getGreenStub.getName).getPsi
     case n => n
   }
-  
+
   override def toString: String = "ScTypeAliasDeclaration: " + ifReadAllowed(name)("")
 
-  def lowerBound: TypeResult = lowerTypeElement match {
-    case Some(te) => te.`type`()
-    case None => Right(Nothing)
-  }
-
-  def upperBound: TypeResult = upperTypeElement match {
-    case Some(te) => te.`type`()
-    case None => Right(Any)
-  }
+  override def `type`(): TypeResult = Failure("ScTypeAliasDeclaration is not typeable in Scala 2.")
 
   override def upperTypeElement: Option[ScTypeElement] =
     byPsiOrStub(boundElement(tUPPER_BOUND))(_.upperBoundTypeElement)

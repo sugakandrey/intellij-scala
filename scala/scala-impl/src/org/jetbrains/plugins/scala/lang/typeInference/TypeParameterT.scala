@@ -1,14 +1,17 @@
 package org.jetbrains.plugins.scala.lang.typeInference
 
 import com.intellij.psi.PsiTypeParameter
+import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.extensions.{ObjectExt, PsiNamedElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScTypeParam, TypeParamIdOwner}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.light.scala.DummyLightTypeParam
-import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Bivariant, Covariant, Invariant, Nothing, TypeParameterType, Variance}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Bivariant, Covariant, Invariant, Nothing, TypeParameterType, TypeSystem, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, Stop}
 import org.jetbrains.plugins.scala.lang.psi.types.result._
+import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaType}
+import org.jetbrains.plugins.scala.project.ProjectContext
+import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions.HKAny
 
 /**
   * Class representing type parameters in our type system. Can be constructed from psi.
@@ -40,6 +43,31 @@ sealed trait TypeParameterT[Tpe <: ScalaType] {
 }
 
 object TypeParameterT {
+  final case class DotTypeParameter(override val psiTypeParameter: ScTypeParam)(private implicit val ts: TypeSystem[DotType])
+      extends TypeParameterT[DotType] {
+
+    override val typeParameters: Seq[TypeParameterT[DotType]] = psiTypeParameter.typeParameters.map(dot)
+
+    override def lowerType: DotType =
+      ts.extractTypeBound(psiTypeParameter, isLower = true)
+        .getOrElse(HKAny(typeParameters))
+
+    override def upperType: DotType =
+      ts.extractTypeBound(psiTypeParameter, isLower = false).getOrElse(ts.Nothing)
+
+    override def update(
+      substitutor: ScSubstitutor,
+      variance:    Variance
+    )(implicit
+      visited: Set[ScType]
+    ): TypeParameterT[DotType] = this // FIXME
+
+    override def varianceInType(tpe:  ScType): Variance = Variance.Invariant // FIXME
+  }
+
+  def dot(psi: ScTypeParam)(implicit ts: TypeSystem[DotType]): TypeParameterT[DotType] =
+    DotTypeParameter(psi)
+
   sealed trait Scala2TypeParameter extends TypeParameterT[ScType] {
     /**see [[scala.reflect.internal.Variances.varianceInType]]*/
     def varianceInType(scType: ScType): Variance = {
@@ -84,10 +112,12 @@ object TypeParameterT {
                               override val upperType: ScType) extends Scala2TypeParameter
 
   private case class ScalaTypeParameter(psiTypeParameter: ScTypeParam) extends Scala2TypeParameter {
-    override val typeParameters: Seq[TypeParameter] = psiTypeParameter.typeParameters.map(ScalaTypeParameter)
+    private[this] implicit val project: ProjectContext = psiTypeParameter
+
+    override val typeParameters: Seq[TypeParameter] =
+      psiTypeParameter.typeParameters.map(ScalaTypeParameter)
 
     override def lowerType: ScType = psiTypeParameter.lowerBound.getOrNothing
-
     override def upperType: ScType = psiTypeParameter.upperBound.getOrAny
   }
 

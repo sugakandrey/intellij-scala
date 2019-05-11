@@ -5,26 +5,16 @@ package api
 package base
 package types
 
-/** 
-* @author Alexander Podkhalyuzin
-* Date: 22.02.2008
-*/
+trait ScInfixTypeElement
+  extends ScInfixElement
+  with ScDesugarizableToParametrizedTypeElement {
 
-/*
-* Common trait for usual infix types and dotty and/or types.
-*/
-trait ScInfixLikeTypeElement extends ScTypeElement {
   def left: ScTypeElement = findChildByClassScala(classOf[ScTypeElement])
 
   def rightOption: Option[ScTypeElement] = findChildrenByClassScala(classOf[ScTypeElement]) match {
     case Array(_, right) => Some(right)
-    case _ => None
+    case _               => None
   }
-}
-
-trait ScInfixTypeElement extends ScInfixLikeTypeElement
-  with ScInfixElement
-  with ScDesugarizableToParametrizedTypeElement {
 
   override protected val typeName = "InfixType"
 

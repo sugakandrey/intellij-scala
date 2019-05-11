@@ -13,7 +13,7 @@ package object typeInference {
   type DotTypeParameter   = TypeParameterT[DotType]
   type ScalaTypeParameter = TypeParameterT[_ <: ScalaType]
 
-  val Parameter: ParameterT.type = ParameterT
+  val Parameter: ParameterT.type         = ParameterT
   val TypeParameter: TypeParameterT.type = TypeParameterT
 
   object Scala2Parameter {

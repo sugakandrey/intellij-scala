@@ -11,6 +11,7 @@ import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.base.types.ScExistentialClause
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScPolymorphicElement
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScDocCommentOwner, ScMember, ScTypeDefinition}
+import org.jetbrains.plugins.scala.lang.psi.types.result.Typeable
 
 /**
  * @author Alexander Podkhalyuzin
@@ -19,7 +20,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScDocCommentOw
  */
 
 trait ScTypeAlias extends ScPolymorphicElement with ScMember
-  with ScDocCommentOwner with ScCommentOwner with ScDecoratedIconOwner {
+  with ScDocCommentOwner with ScCommentOwner with ScDecoratedIconOwner with Typeable {
 
   override protected def getBaseIcon(flags: Int): Icon =
     if (isDefinition) Icons.TYPE_ALIAS else Icons.ABSTRACT_TYPE_ALIAS

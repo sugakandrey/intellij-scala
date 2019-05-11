@@ -23,7 +23,7 @@ import scala.language.implicitConversions
 trait ScType extends ScalaType with ProjectContextOwner {
   override type Self = ScType
 
-  override def typeSystem: ScalaTypeSystem = ScalaTypeSystem.instance
+  override implicit def typeSystem: ScalaTypeSystem = ScalaTypeSystem.instance
 
   private var aliasType: Option[AliasType] = _
 

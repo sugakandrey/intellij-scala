@@ -1,17 +1,26 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
 import com.intellij.psi.PsiTypeParameter
-<<<<<<< HEAD
-=======
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.dotty.lang.psi.types.DottyTypeSystem
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
->>>>>>> Parameterise shared Scala/Dotty models w/ Tpe type parameter
 import org.jetbrains.plugins.scala.project.ProjectContext
 
 /**
   * @author adkozlov
   */
 package object api {
+
+  implicit class TypeSystemExt(private val ts: TypeSystem[_]) extends AnyVal {
+    def isDotty: Boolean = ts match {
+      case _: DottyTypeSystem => true
+      case _                  => false
+    }
+
+    def isScala: Boolean = ts match {
+      case _: ScalaTypeSystem => true
+      case _                  => false
+    }
+  }
 
   implicit class TypeParametersArrayExt(val typeParameters: Array[TypeParameter]) extends AnyVal {
     def depth: Int = typeParameters.toSeq.depth
@@ -33,35 +42,35 @@ package object api {
     }
   }
 
-  def Any(implicit pc: ProjectContext) = StdTypes.instance.Any
+  def Any(implicit pc: ProjectContext) = ScStdTypes.instance.Any
 
-  def AnyRef(implicit pc: ProjectContext) = StdTypes.instance.AnyRef
+  def AnyRef(implicit pc: ProjectContext) = ScStdTypes.instance.AnyRef
 
-  def Null(implicit pc: ProjectContext) = StdTypes.instance.Null
+  def Null(implicit pc: ProjectContext) = ScStdTypes.instance.Null
 
-  def Nothing(implicit pc: ProjectContext) = StdTypes.instance.Nothing
+  def Nothing(implicit pc: ProjectContext) = ScStdTypes.instance.Nothing
 
-  def Singleton(implicit pc: ProjectContext) = StdTypes.instance.Singleton
+  def Singleton(implicit pc: ProjectContext) = ScStdTypes.instance.Singleton
 
-  def AnyVal(implicit pc: ProjectContext) = StdTypes.instance.AnyVal
+  def AnyVal(implicit pc: ProjectContext) = ScStdTypes.instance.AnyVal
 
-  def Unit(implicit pc: ProjectContext) = StdTypes.instance.Unit
+  def Unit(implicit pc: ProjectContext) = ScStdTypes.instance.Unit
 
-  def Boolean(implicit pc: ProjectContext) = StdTypes.instance.Boolean
+  def Boolean(implicit pc: ProjectContext) = ScStdTypes.instance.Boolean
 
-  def Char(implicit pc: ProjectContext) = StdTypes.instance.Char
+  def Char(implicit pc: ProjectContext) = ScStdTypes.instance.Char
 
-  def Byte(implicit pc: ProjectContext) = StdTypes.instance.Byte
+  def Byte(implicit pc: ProjectContext) = ScStdTypes.instance.Byte
 
-  def Short(implicit pc: ProjectContext) = StdTypes.instance.Short
+  def Short(implicit pc: ProjectContext) = ScStdTypes.instance.Short
 
-  def Int(implicit pc: ProjectContext) = StdTypes.instance.Int
+  def Int(implicit pc: ProjectContext) = ScStdTypes.instance.Int
 
-  def Long(implicit pc: ProjectContext) = StdTypes.instance.Long
+  def Long(implicit pc: ProjectContext) = ScStdTypes.instance.Long
 
-  def Float(implicit pc: ProjectContext) = StdTypes.instance.Float
+  def Float(implicit pc: ProjectContext) = ScStdTypes.instance.Float
 
-  def Double(implicit pc: ProjectContext) = StdTypes.instance.Double
+  def Double(implicit pc: ProjectContext) = ScStdTypes.instance.Double
 
   val Bivariant     = Variance.Bivariant
   val Covariant     = Variance.Covariant

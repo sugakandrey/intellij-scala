@@ -138,7 +138,6 @@ class ScLiteralImpl(node: ASTNode) extends ScExpressionImplBase(node)
   }
 
   def getInjectedPsi: util.List[Pair[PsiElement, TextRange]] = if (getValue.isInstanceOf[String]) InjectedLanguageManager.getInstance(getProject).getInjectedPsiFiles(this) else null
-
   def processInjectedPsi(visitor: PsiLanguageInjectionHost.InjectedPsiVisitor) {
     InjectedLanguageManager.getInstance(getProject).enumerate(this, visitor)
   }

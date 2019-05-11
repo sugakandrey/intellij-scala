@@ -7,26 +7,18 @@ package expr
 import com.intellij.lang.ASTNode
 import com.intellij.psi.scope.PsiScopeProcessor
 import com.intellij.psi.tree.TokenSet
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.{PsiElement, ResolveState}
 import org.jetbrains.plugins.scala.extensions.PsiElementExt
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
-import org.jetbrains.plugins.scala.lang.psi.api.base.ScFieldId
-import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScBindingPattern, ScCaseClause, ScCaseClauses}
-import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScParameter
-import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScDeclaredElementsHolder, ScFunction, ScTypeAlias}
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateBody
+import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScCaseClause, ScCaseClauses}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.createNewLineNode
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
-import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType}
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorType
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -93,9 +85,9 @@ trait ScBlock extends ScExpression with ScDeclarationSequenceHolder with ScImpor
 
   def exprs: Seq[ScExpression] = findChildrenByClassScala(classOf[ScExpression]).toSeq
   def statements: Seq[ScBlockStatement] = findChildrenByClassScala(classOf[ScBlockStatement]).toSeq
-  
+
   def hasRBrace: Boolean = getNode.getChildren(TokenSet.create(ScalaTokenTypes.tRBRACE)).length == 1
-  
+
   def getRBrace: Option[ASTNode] = getNode.getChildren(TokenSet.create(ScalaTokenTypes.tRBRACE)) match {
     case Array(node) => Some(node)
     case _ => None
@@ -116,7 +108,7 @@ trait ScBlock extends ScExpression with ScDeclarationSequenceHolder with ScImpor
       place: PsiElement): Boolean =
     super[ScDeclarationSequenceHolder].processDeclarations(processor, state, lastParent, place) &&
     super[ScImportsHolder].processDeclarations(processor, state, lastParent, place)
-  
+
   def needCheckExpectedType = true
 }
 

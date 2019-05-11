@@ -507,9 +507,9 @@ object ResolveUtils {
     * }}}
     * will return outer `Foo` trait.
     */
-  def enclosingTypeDef(e: PsiElement): Option[ScTypeDefinition] = {
-    def enclosingTdef(e: PsiElement): ScTypeDefinition =
-      PsiTreeUtil.getContextOfType(e, true, classOf[ScTypeDefinition])
+  def enclosingTemplateDef(e: PsiElement): Option[ScTemplateDefinition] = {
+    def enclosingTdef(e: PsiElement): ScTemplateDefinition =
+      PsiTreeUtil.getContextOfType(e, true, classOf[ScTemplateDefinition])
 
     val isInTemplateParents = PsiTreeUtil.getContextOfType(e, true, classOf[ScTemplateParents])
 

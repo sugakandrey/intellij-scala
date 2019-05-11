@@ -8,12 +8,13 @@ import com.intellij.psi.tree.IElementType
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes._
 import org.jetbrains.plugins.scala.lang.psi.api.base.types.ScTypeElement
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystemOwner
 import org.jetbrains.plugins.scala.lang.psi.types.result.TypeResult
 
-trait ScTypeBoundsOwner extends ScalaPsiElement {
+trait ScTypeBoundsOwner extends ScalaPsiElement with TypeSystemOwner {
   def lowerBound: TypeResult
-
   def upperBound: TypeResult
+
   def viewBound: Seq[ScType] = Nil
   def contextBound: Seq[ScType] = Nil
 
@@ -29,9 +30,8 @@ trait ScTypeBoundsOwner extends ScalaPsiElement {
   def removeImplicitBounds() {}
 
   def boundsText: String = {
-    def toString(bounds: Traversable[ScTypeElement], elementType: IElementType) = bounds.map {
-      case e => s"${elementType.toString} ${e.getText}"
-    }
+    def toString(bounds: Traversable[ScTypeElement], elementType: IElementType) =
+      bounds.map(e => s"${elementType.toString} ${e.getText}")
 
     (toString(lowerTypeElement, tLOWER_BOUND) ++
       toString(upperTypeElement, tUPPER_BOUND) ++

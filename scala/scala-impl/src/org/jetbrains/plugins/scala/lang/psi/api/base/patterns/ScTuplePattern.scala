@@ -8,7 +8,7 @@ package patterns
 import org.jetbrains.plugins.scala.lang.psi.types.api.TupleType
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 
-/** 
+/**
 * @author Alexander Podkhalyuzin
 * Date: 28.02.2008
 */
@@ -16,8 +16,11 @@ import org.jetbrains.plugins.scala.lang.psi.types.result._
 trait ScTuplePattern extends ScPattern {
   def patternList: Option[ScPatterns] = findChild(classOf[ScPatterns])
 
-  override def `type`(): TypeResult = this.flatMap(patternList) { list =>
-    val types = list.patterns.map(_.`type`().getOrAny)
-    Right(TupleType(types))
-  }
+  override def `type`(): TypeResult =
+    patternList match {
+      case None => Failure("Can't infer tuple pattern type.")
+      case Some(list) =>
+        val types = list.patterns.map(_.`type`().getOrAny)
+        Right(TupleType(types))
+    }
 }

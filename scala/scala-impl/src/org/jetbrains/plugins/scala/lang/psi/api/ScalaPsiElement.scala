@@ -3,6 +3,8 @@ package org.jetbrains.plugins.scala.lang.psi.api
 import com.intellij.psi.tree.{IElementType, TokenSet}
 import com.intellij.psi.{PsiElement, PsiElementVisitor}
 import org.jetbrains.plugins.scala.lang.psi.ElementScope
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
+import org.jetbrains.plugins.scala.lang.psi.types.{ScalaType, ScalaTypeSystem}
 import org.jetbrains.plugins.scala.project.{ProjectContext, ProjectContextOwner}
 
 trait ScalaPsiElement extends PsiElement with ProjectContextOwner with Annotatable {
@@ -12,6 +14,8 @@ trait ScalaPsiElement extends PsiElement with ProjectContextOwner with Annotatab
   implicit def elementScope: ElementScope = ElementScope(this)
 
   implicit def projectContext: ProjectContext = this.getProject
+
+  implicit def typeSystem: TypeSystem[_ <: ScalaType] = ScalaTypeSystem.instance // FIXME
 
   def isInCompiledFile: Boolean = getContainingFile match {
     case sf: ScalaFile => sf.isCompiled

@@ -22,8 +22,8 @@ object Failure {
 
   import scala.util.{Either, Left}
 
-  def apply(cause: String)
-           (implicit context: ProjectContext): Left[Failure, ScType] =
+  def apply[Tpe <: ScalaType](cause: String)
+           (implicit context: ProjectContext): Either[Failure, Tpe] =
     Left(new Failure(cause))
 
   def unapply(result: Either[Failure, ScType]): Option[String] = result match {

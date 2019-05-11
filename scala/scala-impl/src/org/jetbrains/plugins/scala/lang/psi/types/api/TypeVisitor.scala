@@ -1,6 +1,6 @@
 package org.jetbrains.plugins.scala.lang.psi.types.api
 
-import org.jetbrains.plugins.scala.lang.psi.types.ScLiteralType
+import org.jetbrains.plugins.scala.lang.psi.types.{ScLiteralType, StdType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.ScMethodType
 
