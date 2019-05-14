@@ -2,6 +2,7 @@ package org.jetbrains.plugins.scala.lang.typeInference
 
 import com.intellij.psi.PsiTypeParameter
 import org.jetbrains.plugins.dotty.lang.core.types.DotType
+import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions.HKAny
 import org.jetbrains.plugins.scala.extensions.{ObjectExt, PsiNamedElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScTypeParam, TypeParamIdOwner}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
@@ -11,7 +12,6 @@ import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{P
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaType}
 import org.jetbrains.plugins.scala.project.ProjectContext
-import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions.HKAny
 
 /**
   * Class representing type parameters in our type system. Can be constructed from psi.
@@ -54,13 +54,6 @@ object TypeParameterT {
 
     override def upperType: DotType =
       ts.extractTypeBound(psiTypeParameter, isLower = false).getOrElse(ts.Nothing)
-
-    override def update(
-      substitutor: ScSubstitutor,
-      variance:    Variance
-    )(implicit
-      visited: Set[ScType]
-    ): TypeParameterT[DotType] = this // FIXME
 
     override def varianceInType(tpe:  ScType): Variance = Variance.Invariant // FIXME
   }

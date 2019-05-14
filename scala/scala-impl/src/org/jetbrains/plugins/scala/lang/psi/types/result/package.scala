@@ -10,7 +10,7 @@ package object result {
 
   import scala.util.{Either, Left, Right}
 
-  type TypeResultT[T <: ScalaType] = Either[Failure, T]
+  type TypeResultT[T] = Either[Failure, T]
 
   type TypeResult      = TypeResultT[ScType]
   type ScalaTypeResult = TypeResultT[ScalaType]

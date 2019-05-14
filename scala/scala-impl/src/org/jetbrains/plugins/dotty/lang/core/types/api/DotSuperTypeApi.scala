@@ -4,8 +4,10 @@ package api
 import org.jetbrains.plugins.scala.lang.psi.types.api.Variance
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.DotSubstitutor
 
-trait DotExprTypeApi { this: DotExprType =>
-  def underlying: DotType = resTpe
+trait DotSuperTypeApi { this: DotSuperType =>
+  def underlying: DotType = superTpe
+
+  override def superType: DotType = ???
 
   def updateSubtypes(
     substitutor: DotSubstitutor,
@@ -13,9 +15,9 @@ trait DotExprTypeApi { this: DotExprType =>
   )(implicit
     visited: Set[DotType]
   ): DotType = {
-    val updated = resTpe.recursiveUpdateImpl(substitutor, variance)
+    val updatedSuper = superTpe.recursiveUpdateImpl(substitutor, variance)
 
-    if (resTpe eq updated) this
-    else                   DotExprType(updated)
+    if (updatedSuper eq superTpe) this
+    else                          DotSuperType(symbol, updatedSuper)
   }
 }

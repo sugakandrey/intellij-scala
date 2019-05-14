@@ -12,7 +12,7 @@ import scala.language.implicitConversions
   * Nikolay.Tropin
   * 01-Feb-18
   */
-private abstract class DepMethodParamSubstitution extends LeafSubstitution {
+private abstract class DepMethodParamSubstitution extends LeafSubstitution[ScType] {
 
   def substitutedType(parameter: ScParameter): Option[ScType]
 

@@ -13,7 +13,7 @@ import scala.collection.immutable.LongMap
   * Nikolay.Tropin
   * 01-Feb-18
   */
-private case class TypeParamSubstitution(tvMap: LongMap[ScType]) extends LeafSubstitution {
+private[recursiveUpdate] case class TypeParamSubstitution(tvMap: LongMap[ScType]) extends LeafSubstitution[ScType] {
 
   override def toString: String = tvMap.map {
     case (id, tp) => params.typeParamName(id) + " -> " + tp.toString
@@ -64,7 +64,7 @@ private case class TypeParamSubstitution(tvMap: LongMap[ScType]) extends LeafSub
   }
 }
 
-private object TypeParamSubstitution {
+private[recursiveUpdate] object TypeParamSubstitution {
   def buildMap[T, S](typeParamsLike: Seq[T],
                      types: Seq[S],
                      initial: LongMap[ScType] = LongMap.empty)

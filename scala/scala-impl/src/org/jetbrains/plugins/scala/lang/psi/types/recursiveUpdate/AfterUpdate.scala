@@ -1,13 +1,11 @@
 package org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate
 
-import org.jetbrains.plugins.scala.lang.psi.types.ScType
+import org.jetbrains.plugins.scala.lang.psi.types.ScalaType
 
-sealed trait AfterUpdate
+sealed trait AfterUpdate[+Tpe <: ScalaType]
 
 object AfterUpdate {
-  case class ReplaceWith(scType: ScType) extends AfterUpdate
-
-  case object ProcessSubtypes extends AfterUpdate
-
-  case object Stop extends AfterUpdate
+  case class ReplaceWith[Tpe <: ScalaType](scType: Tpe) extends AfterUpdate[Tpe]
+  case object ProcessSubtypes extends AfterUpdate[Nothing]
+  case object Stop            extends AfterUpdate[Nothing]
 }

@@ -6,22 +6,20 @@ package types
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiNamedElement
 import org.jetbrains.plugins.scala.extensions.ifReadAllowed
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeSystem, TypeVisitor, ValueType}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.ScClassParameter
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScTypeAliasDeclaration, ScTypeAliasDefinition}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScEarlyDefinitions
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateBody
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScClass, ScTypeDefinition}
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeVisitor, ValueType, Variance}
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
+import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeVisitor, ValueType}
 import org.jetbrains.plugins.scala.lang.psi.types.result.TypeResult
 import org.jetbrains.plugins.scala.project.ProjectContextOwner
 
 import scala.language.implicitConversions
 
 trait ScType extends ScalaType with ProjectContextOwner {
-  override type Self = ScType
+  override type BaseTpe = ScType
 
   override implicit def typeSystem: ScalaTypeSystem = ScalaTypeSystem.instance
 
@@ -70,8 +68,8 @@ trait ScType extends ScalaType with ProjectContextOwner {
 }
 
 object ScType {
-  implicit def recursiveExtensions(tp: ScType): recursiveUpdate.Extensions = new recursiveUpdate.Extensions(tp)
-
+  implicit def recursiveUpdateExtension(tpe: ScType): recursiveUpdate.Extensions[ScType] =
+    new recursiveUpdate.Extensions[ScType](tpe)
   /**
     * Expands type aliases, including those in a type projection. Type Alias Declarations are replaced by their upper
     * bound.

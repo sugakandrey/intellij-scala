@@ -1,27 +1,27 @@
 package org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate
 
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, ReplaceWith}
-import org.jetbrains.plugins.scala.lang.psi.types.{LeafType, ScType}
+import org.jetbrains.plugins.scala.lang.psi.types.{LeafType, ScalaType}
 
 /**
   * Nikolay.Tropin
   * 01-Feb-18
   */
-private abstract class LeafSubstitution extends SimpleUpdate {
+private abstract class LeafSubstitution[Tpe <: ScalaType] extends SimpleUpdate[Tpe] {
 
-  protected val subst: PartialFunction[LeafType, ScType]
+  protected val subst: PartialFunction[LeafType, Tpe]
 
-  def apply(scType: ScType): AfterUpdate = scType match {
+  def apply(tpe: Tpe): AfterUpdate[Tpe] = tpe match {
     //we shouldn't go deeper even if this substitution can't process `scType`
     //to allow application of several of them in the same pass
-    case leaf: LeafType => ReplaceWith(subst.applyOrElse(leaf, identity[ScType]))
-
-    case _ => ProcessSubtypes
+    case leaf: LeafType => ReplaceWith(subst.applyOrElse(leaf, Function.const(tpe)))
+    case _              => ProcessSubtypes
   }
 }
 
 object LeafSubstitution {
-  def apply(pf: PartialFunction[LeafType, ScType]): SimpleUpdate = new LeafSubstitution {
-    override protected val subst: PartialFunction[LeafType, ScType] = pf
-  }
+  def apply[Tpe <: ScalaType](pf: PartialFunction[LeafType, Tpe]): SimpleUpdate[Tpe] =
+    new LeafSubstitution[Tpe] {
+      override protected val subst: PartialFunction[LeafType, Tpe] = pf
+    }
 }

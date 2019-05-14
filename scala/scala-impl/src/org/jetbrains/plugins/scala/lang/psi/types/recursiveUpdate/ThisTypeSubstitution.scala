@@ -3,7 +3,7 @@ package org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate
 import com.intellij.psi.{PsiClass, PsiTypeParameter}
 import org.jetbrains.plugins.scala.extensions.PsiMemberExt
 import org.jetbrains.plugins.scala.lang.psi.ScalaPsiUtil.isInheritorDeep
-import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScBindingPattern, ScReferencePattern}
+import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScBindingPattern
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAliasDeclaration
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, ScTypeParam}
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
@@ -18,7 +18,7 @@ import scala.annotation.tailrec
   * Nikolay.Tropin
   * 01-Feb-18
   */
-private case class ThisTypeSubstitution(target: ScType) extends LeafSubstitution {
+private case class ThisTypeSubstitution(target: ScType) extends LeafSubstitution[ScType] {
 
   override def toString: String = s"`this` -> $target"
 

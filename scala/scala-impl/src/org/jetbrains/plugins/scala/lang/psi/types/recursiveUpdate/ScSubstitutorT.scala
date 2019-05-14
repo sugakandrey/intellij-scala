@@ -9,8 +9,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, 
 import org.jetbrains.plugins.scala.lang.psi.types.Compatibility.Expression
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Covariant, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, ReplaceWith, Stop}
-import org.jetbrains.plugins.scala.lang.psi.types.api.TypeParameterType
-import org.jetbrains.plugins.scala.lang.typeInference.{Parameter, TypeParameter}
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.annotation.tailrec
 import scala.collection.Seq
@@ -32,22 +31,25 @@ import scala.util.hashing.MurmurHash3
   * If it's known that every substitution in a chain may update only leaf subtypes, than we may avoid
   * recursively traversing a type several times.
   **/
-final class ScSubstitutor private(_substitutions: Array[Update],   //Array is used for the best concatenation performance, it is effectively immutable
-                                  _fromIndex: Int = 0)
-  extends (ScType => ScType) {
+final class ScSubstitutorT[Tpe <: ScalaType] private[recursiveUpdate] (
+  _substitutions: Array[Update[Tpe]], //Array is used for the best concatenation performance, it is effectively immutable
+  _fromIndex:     Int = 0
+)(implicit
+  updater: SubtypeUpdater[Tpe]
+) extends (Tpe => Tpe) {
 
   import ScSubstitutor._
 
   private[recursiveUpdate] val substitutions = _substitutions
   private[recursiveUpdate] val fromIndex = _fromIndex
-  private[recursiveUpdate] def next: ScSubstitutor = new ScSubstitutor(substitutions, fromIndex + 1)
+  private[recursiveUpdate] def next: ScSubstitutorT[Tpe] = new ScSubstitutorT(substitutions, fromIndex + 1)
 
   private[recursiveUpdate] lazy val hasNonLeafSubstitutions: Boolean = hasNonLeafSubstitutionsImpl
 
   private[this] def hasNonLeafSubstitutionsImpl: Boolean = {
     var idx = fromIndex
     while (idx < substitutions.length) {
-      if (!substitutions(idx).isInstanceOf[LeafSubstitution])
+      if (!substitutions(idx).isInstanceOf[LeafSubstitution[Tpe]])
         return true
 
       idx += 1
@@ -56,52 +58,55 @@ final class ScSubstitutor private(_substitutions: Array[Update],   //Array is us
   }
 
   //positive fromIndex is possible only for temporary substitutors during recursive update
-  private def assertFullSubstitutor(): Unit = LOG.assertTrue(fromIndex == 0)
+  private[recursiveUpdate] def assertFullSubstitutor(): Unit = LOG.assertTrue(fromIndex == 0)
 
-  override def apply(`type`: ScType): ScType = {
+  override def apply(`type`: Tpe): Tpe = {
     if (cacheSubstitutions)
       cache ++= this.allTypeParamsMap
 
-    recursiveUpdateImpl(`type`)(SubtypeUpdaterNoVariance, Set.empty)
+    recursiveUpdateImpl(`type`)(updater.noVariance, Set.empty)
   }
 
   //This method allows application of different `Update` functions in a single pass (see ScSubstitutor).
   //WARNING: If several updates are used, they should be applicable only for leaf types, e.g. which return themselves
   //from `updateSubtypes` method
   @tailrec
-  private[recursiveUpdate] def recursiveUpdateImpl(scType: ScType,
-                                                   variance: Variance = Covariant,
-                                                   isLazySubtype: Boolean = false)
-                                                  (implicit subtypeUpdater: SubtypeUpdater,
-                                                   visited: Set[ScType] = Set.empty): ScType = {
-    if (fromIndex >= substitutions.length || visited(scType)) scType
+  private[recursiveUpdate] def recursiveUpdateImpl(
+    tpe:           Tpe,
+    variance:      Variance = Covariant,
+    isLazySubtype: Boolean = false
+  )(implicit
+    subtypeUpdater: SubtypeUpdater[Tpe],
+    visited:        Set[Tpe] = Set.empty
+  ): Tpe =
+    if (fromIndex >= substitutions.length || visited(tpe)) tpe
     else {
       val currentUpdate = substitutions(fromIndex)
 
-      currentUpdate(scType, variance) match {
+      currentUpdate(tpe, variance) match {
         case ReplaceWith(res) =>
           next.recursiveUpdateImpl(res, variance, isLazySubtype)(subtypeUpdater, visited)
-        case Stop => scType
+        case Stop => tpe
         case ProcessSubtypes =>
-          val newVisited = if (isLazySubtype) visited + scType else visited
+          val newVisited = if (isLazySubtype) visited + tpe else visited
 
           if (hasNonLeafSubstitutions) {
-            val withCurrentUpdate = subtypeUpdater.updateSubtypes(scType, variance, ScSubstitutor(currentUpdate))(newVisited)
+            val withCurrentUpdate =
+              subtypeUpdater.updateSubtypes(tpe, variance, ScSubstitutorT(currentUpdate))(
+                newVisited
+              )
             next.recursiveUpdateImpl(withCurrentUpdate, variance)(subtypeUpdater, Set.empty)
-          }
-          else {
-            subtypeUpdater.updateSubtypes(scType, variance, this)(newVisited)
+          } else {
+            subtypeUpdater.updateSubtypes(tpe, variance, this)(newVisited)
           }
       }
     }
-  }
 
-
-  def followed(other: ScSubstitutor): ScSubstitutor = {
+  def followed(other: ScSubstitutorT[Tpe]): ScSubstitutorT[Tpe] = {
     assertFullSubstitutor()
 
     if (this.isEmpty)
-      if (other.fromIndex > 0) new ScSubstitutor(other.substitutions)
+      if (other.fromIndex > 0) new ScSubstitutorT(other.substitutions)
       else other
     else if (other.isEmpty) this
     else {
@@ -111,39 +116,11 @@ final class ScSubstitutor private(_substitutions: Array[Update],   //Array is us
       if (newLength > followLimit)
         LOG.error("Too much followers for substitutor: " + this.toString)
 
-      val newArray = new Array[Update](newLength)
+      val newArray = new Array[Update[Tpe]](newLength)
       substitutions.copyToArray(newArray, 0)
       other.substitutions.copyToArray(newArray, thisLength)
 
-      new ScSubstitutor(newArray)
-    }
-  }
-
-  def followUpdateThisType(tp: ScType): ScSubstitutor = {
-    assertFullSubstitutor()
-
-    ScSubstitutor(tp).followed(this)
-  }
-
-  def withBindings(from: Seq[TypeParameter], target: Seq[TypeParameter]): ScSubstitutor = {
-    assertFullSubstitutor()
-
-    def simple: ScSubstitutor = bind(from, target)(TypeParameterType(_))
-
-    def mergeHead(old: TypeParamSubstitution): ScSubstitutor = {
-      val newMap = TypeParamSubstitution.buildMap(from, target, old.tvMap)(TypeParameterType(_))
-      val cloned = substitutions.clone()
-      cloned(0) = TypeParamSubstitution(newMap)
-      new ScSubstitutor(cloned)
-    }
-
-    if (from.isEmpty || target.isEmpty) this
-    else if (this.isEmpty) simple
-    else {
-      substitutions.head match {
-        case tps: TypeParamSubstitution => mergeHead(tps)
-        case _ => simple.followed(this)
-      }
+      new ScSubstitutorT(newArray)
     }
   }
 
@@ -161,22 +138,28 @@ final class ScSubstitutor private(_substitutions: Array[Update],   //Array is us
 
   def isEmpty: Boolean = substitutions.isEmpty
 
-  private def allTypeParamsMap: LongMap[ScType] = substitutions.foldLeft(LongMap.empty[ScType]) { (map, substitution) =>
-    substitution match {
-      case TypeParamSubstitution(tvMap) => map ++ tvMap
-      case _ => map
-    }
+  private def allTypeParamsMap: LongMap[ScType] = substitutions.foldLeft(LongMap.empty[ScType]) {
+    (map, substitution) =>
+      substitution match {
+        case tps: TypeParamSubstitution => map ++ tps.tvMap
+        case _                          => map
+      }
   }
 }
 
-object ScSubstitutor {
+object ScSubstitutorT {
   val LOG: Logger = Logger.getInstance("#org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor")
 
   val key: Key[ScSubstitutor] = Key.create("scala substitutor key")
 
   val empty: ScSubstitutor = new ScSubstitutor(Array.empty)
 
-  private[recursiveUpdate] def apply(s: Update) = new ScSubstitutor(Array(s))
+  private[recursiveUpdate] def apply[Tpe <: ScalaType](
+    s: Update[Tpe]
+  )(implicit
+    updater: SubtypeUpdater[Tpe]
+  ): ScSubstitutorT[Tpe] =
+    new ScSubstitutorT(Array(s))
 
   private val followLimit = 800
 
@@ -186,11 +169,11 @@ object ScSubstitutor {
 
   def apply(tvMap: LongMap[ScType]): ScSubstitutor = {
     if (tvMap.isEmpty) ScSubstitutor.empty
-    else ScSubstitutor(TypeParamSubstitution(tvMap))
+    else ScSubstitutorT(TypeParamSubstitution(tvMap))
   }
 
   def apply(updateThisType: ScType): ScSubstitutor =
-    ScSubstitutor(ThisTypeSubstitution(updateThisType))
+    ScSubstitutorT(ThisTypeSubstitution(updateThisType))
 
   def paramToExprType(parameters: Seq[Parameter], expressions: Seq[Expression], useExpected: Boolean = true) =
     ScSubstitutor(ParamsToExprs(parameters, expressions, useExpected))
