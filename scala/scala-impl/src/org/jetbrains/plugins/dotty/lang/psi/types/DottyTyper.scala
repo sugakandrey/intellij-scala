@@ -2,7 +2,7 @@ package org.jetbrains.plugins.dotty.lang.psi.types
 
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiModifier
-import org.jetbrains.plugins.dotty.lang.core.symbols.TemplateDefSymbol
+import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeSymbol}
 import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions._
 import org.jetbrains.plugins.dotty.lang.core.types._
 import org.jetbrains.plugins.dotty.lang.core.{Constant, Refinement}
@@ -249,10 +249,11 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
   private def typedProjectionType(projection: ScTypeProjection): DotTypeResult = {
     projection.bind() match {
       case Some(ScalaResolveResult(elem, _)) =>
-        for {
-          baseTpe <- typedTypeElement(projection.typeElement)
-          symbol  <- TemplateDefSymbol.fromPsi(elem)
-        } yield DotTypeRef(baseTpe, symbol)
+        val symbol = TypeSymbol.fromPsi(elem)
+        symbol match {
+          case None       => Failure(s"Can't create type symbol from ${elem.getText}")
+          case Some(tsym) => Right(tsym.typeRef)
+        }
       case _ => Failure("Cannot resolve projection reference.")
     }
   }

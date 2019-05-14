@@ -29,12 +29,6 @@ trait ScSuperReference extends ScExpression with ScPathElement {
 
   def reference: Option[ScStableCodeReference] = findChild(classOf[ScStableCodeReference])
 
-  /**
-    * For `Foo.super[C]` returns template definition
-    * denoted by `Foo` (or `this` in an implicit case)
-    */
-  def thisTemplate: Option[ScTemplateDefinition]
-
   override protected def acceptScala(visitor: ScalaElementVisitor): Unit = {
     visitor.visitSuperReference(this)
   }

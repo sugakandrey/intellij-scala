@@ -19,5 +19,5 @@ class ScStableReferencePatternImpl(node : ASTNode) extends ScalaPsiElementImpl(n
 
   override def toString: String = "StableElementPattern"
 
-  override def `type`(): TypeResult = this.flatMapType(referenceExpression)
+  override def `type`(): TypeResult = referenceExpression.flatMapType
 }

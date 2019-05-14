@@ -19,6 +19,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.base.types.ScTypeElement
 import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.createIdentifier
 import org.jetbrains.plugins.scala.lang.psi.stubs.ScTypeAliasStub
+import org.jetbrains.plugins.scala.lang.psi.types.result.TypeResult
 
 /**
 * @author Alexander Podkhalyuzin
@@ -69,4 +70,6 @@ class ScTypeAliasDefinitionImpl private (stub: ScTypeAliasStub, node: ASTNode)
   override protected def acceptScala(visitor: ScalaElementVisitor) {
     visitor.visitTypeAliasDefinition(this)
   }
+
+  override def `type`(): TypeResult = aliasedType
 }

@@ -7,7 +7,7 @@ import org.jetbrains.plugins.scala.extensions.{PsiElementExt, childOf}
 import org.jetbrains.plugins.scala.lang.parser.util.ParserUtils
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScReference
 import org.jetbrains.plugins.scala.lang.psi.api.base.patterns._
-import org.jetbrains.plugins.scala.lang.psi.api.base.types.{ScInfixLikeTypeElement, ScInfixTypeElement, ScTupleTypeElement, ScTypeArgs}
+import org.jetbrains.plugins.scala.lang.psi.api.base.types.{ScInfixTypeElement, ScTupleTypeElement, ScTypeArgs}
 import org.jetbrains.plugins.scala.lang.psi.api.expr._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameterClause, ScTypeParamClause}
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
@@ -70,13 +70,13 @@ class ScalaMoveLeftRightHandler extends MoveElementLeftRightHandler {
   }
 
   private object InfixElement {
-    def unapply(elem: PsiElement): Option[(PsiElement, Option[ScReference], PsiElement)] = elem match {
-      case ScInfixExpr(l, o, r) => Some((l, Option(o), r))
-      case ip: ScInfixPattern => ip.rightOption.map(r => (ip.left, Option(ip.operation), r))
-      case it: ScInfixTypeElement => it.rightOption.map(r => (it.left, Option(it.operation), r))
-      case it: ScInfixLikeTypeElement => it.rightOption.map(r => (it.left, None, r))
-      case _ => None
-    }
+    def unapply(elem: PsiElement): Option[(PsiElement, Option[ScReference], PsiElement)] =
+      elem match {
+        case ScInfixExpr(l, o, r)   => Some((l, Option(o), r))
+        case ip: ScInfixPattern     => ip.rightOption.map(r => (ip.left, Option(ip.operation), r))
+        case it: ScInfixTypeElement => it.rightOption.map(r => (it.left, Option(it.operation), r))
+        case _                      => None
+      }
   }
 
   private def isNonAssignOperator(ref: ScReference): Boolean = {

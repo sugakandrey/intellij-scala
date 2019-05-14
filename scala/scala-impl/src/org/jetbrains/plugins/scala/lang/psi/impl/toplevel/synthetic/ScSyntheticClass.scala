@@ -21,6 +21,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScObject
 import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
+import org.jetbrains.plugins.scala.lang.psi.types.result.TypeResult
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, ResolveProcessor, ResolverEnv}
 import org.jetbrains.plugins.scala.lang.typeInference.Parameter
@@ -60,9 +61,9 @@ class ScSyntheticTypeParameter(override val name: String, val owner: ScFun)
   def isCovariant = false
   def isContravariant = false
 
-  def lowerBound = Right(Nothing)
+  override def lowerBound: TypeResult = Right(Nothing)
 
-  def upperBound = Right(Any)
+  override def upperBound: TypeResult = Right(Any)
 
   def getIndex = -1
   def getOwner = null

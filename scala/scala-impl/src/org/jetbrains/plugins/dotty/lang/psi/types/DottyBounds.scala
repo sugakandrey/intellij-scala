@@ -15,12 +15,12 @@ trait DottyBounds extends Bounds[DotType] {
   override def glb(
     first:                 DotType,
     second:                DotType,
-    @deprecated checkWeak: Boolean = false
+    @deprecated("Only makes sense for scala 2") checkWeak: Boolean = false
   ): DotType = ???
 
   override def lub(
     first:                 DotType,
     second:                DotType,
-    @deprecated checkWeak: Boolean = false
+    @deprecated("Only makes sense for scala 2") checkWeak: Boolean = false
   ): DotType = ???
 }
