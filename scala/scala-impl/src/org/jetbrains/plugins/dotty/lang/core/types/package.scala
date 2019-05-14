@@ -1,7 +1,11 @@
 package org.jetbrains.plugins.dotty.lang.core
 
+import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeSymbol}
+import org.jetbrains.plugins.scala.extensions._
+import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
+
 package object types {
-  implicit class DotTypeExt(private val tpe: DotType) extends AnyVal {
+  implicit class DotTypeApi(private val tpe: DotType) extends AnyVal {
     def isAny: Boolean     = tpe == tpe.typeSystem.Any
     def isNothing: Boolean = tpe == tpe.typeSystem.Nothing
 
@@ -44,6 +48,65 @@ package object types {
       case andTpe: DotAndType      => ???
       case refined: DotRefinedType => ???
       case _                       => tpe
+    }
+
+    final def typeParams: Seq[DotTypeParameter] = typeParams(tpe)
+
+    /**
+      * - For [[DotTemplateInfo]] type parameters of it's underlying template
+      * - For [[DotTypeRef]] type parameters of the
+      * - For [[DotRefinedType]] type parameters of it's parent type
+      * @return
+      */
+    private final def typeParams(tp: DotType): Seq[DotTypeParameter] = tp match {
+      case DotTypeRef(_, symbol)                   => symbol.typeParameters
+      case tInfo: DotTemplateInfo                  => ???
+//      case wc: DotWildcardType                     => wc.bounds.fold(Nil)(_.typeParams)
+      case lambda: DotHKTypeLambda                 => lambda.typeParams
+      case _: DotSingletonType | _: DotRefinedType => Nil
+      case proxy: DotProxyType                     => proxy.superType.typeParams
+      case _                                       => Nil
+    }
+
+    final def applyIfParameterized(targs: Seq[DotType]): DotType =
+      if (typeParams(tpe).nonEmpty) DotAppliedType(tpe, targs)
+      else                          tpe
+
+    /** The type symbol associated with [[tpe]] */
+    @annotation.tailrec
+    final def typeSymbol: Option[TypeSymbol] = tpe match {
+      case tref: DotTypeRef      => tref.designator.toOption
+      case info: DotTemplateInfo => info.tdef.toOption
+      case _: DotSingletonType   => None
+      case proxy: DotProxyType   => proxy.underlying.typeSymbol
+      case _                     => None
+    }
+
+    final def tdefSymbol: Option[TemplateDefSymbol] = tpe match {
+      case ctp: DotConstantType => ctp.underlying.tdefSymbol
+      case tref @ DotTypeRef(_, sym) =>
+        if (sym.isTemplate) sym.tdefSymbol.toOption
+        else                tref.superType.tdefSymbol
+      case info: DotTemplateInfo => info.tdef.toOption
+      case _: DotSingletonType   => None
+      case proxy: DotProxyType   => proxy.underlying.tdefSymbol
+      case DotAndType(lhs, rhs) =>
+        for {
+          lsym <- lhs.tdefSymbol
+          rsym <- rhs.tdefSymbol
+          res  <- if (lsym.isSubClass(rsym)) lsym.toOption
+          else if (rsym.isSubClass(lsym)) rsym.toOption
+          else None
+        } yield res
+      case DotOrType(lhs, rhs) =>
+        for {
+          lsym <- lhs.tdefSymbol
+          rsym <- rhs.tdefSymbol
+          res  <- if (lsym.isSubClass(rsym)) rsym.toOption
+          else if (rsym.isSubClass(lsym)) lsym.toOption
+          else None
+        } yield res
+      case _ => None
     }
   }
 }

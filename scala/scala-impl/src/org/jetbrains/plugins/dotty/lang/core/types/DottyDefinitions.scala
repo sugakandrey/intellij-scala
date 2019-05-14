@@ -2,10 +2,10 @@ package org.jetbrains.plugins.dotty.lang.core.types
 
 import org.jetbrains.plugins.dotty.lang.core.PackageDesignator
 import org.jetbrains.plugins.dotty.lang.core.symbols.TemplateDefSymbol
-import org.jetbrains.plugins.scala.lang.psi.types.api.StdTypes
-import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.lexer.{ScalaModifier => Mod}
+import org.jetbrains.plugins.scala.lang.psi.types.api.StdTypes
+import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
 import org.jetbrains.plugins.scala.util.EnumSet
 import org.jetbrains.plugins.scala.util.EnumSet.EnumSet
 
@@ -20,12 +20,14 @@ object DottyDefinitions {
     TemplateDefSymbol.SyntheticTemplateSymbol(ScalaPkg.toOption, None, name, parents)
 
   val AnyNme: String     = "Any"
+  val AnyKindNme: String = "AnyKind"
   val AnyValNme: String  = "AnyVal"
   val NothingNme: String = "Nothing"
   val UnitNme: String    = "Unit"
 
   def ScalaPkg: PackageDesignator     = PackageDesignator("scala")
   def AnyClass: TemplateDefSymbol     = scalaStdClass(AnyNme, EnumSet(Mod.Abstract))
+  def AnyKindClass: TemplateDefSymbol = scalaStdClass(AnyKindNme, EnumSet(Mod.Abstract, Mod.Final))
   def AnyValClass: TemplateDefSymbol  = scalaStdClass(AnyValNme, EnumSet(Mod.Abstract), Seq(AnyTpe))
   def NothingClass: TemplateDefSymbol = scalaStdClass(NothingNme, EnumSet(Mod.Abstract, Mod.Final), Seq(AnyTpe))
 

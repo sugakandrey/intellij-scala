@@ -2,7 +2,7 @@ package org.jetbrains.plugins.dotty.lang.core.symbols
 
 import org.jetbrains.plugins.dotty.lang.core.types.{DotNoPrefix, DotTypeBounds, DotTypeRef}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
-import org.jetbrains.plugins.scala.lang.typeInference.TypeParameterT.DotTypeParameter
+import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
 
 trait TypeParamSymbol extends TypeSymbol {
   override protected def substitutor: ScSubstitutor = ???
