@@ -8,7 +8,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.InferUtil
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScExpression
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
 import org.jetbrains.plugins.scala.lang.psi.types.api.FunctionType
-import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintSystem, ScType, ValType}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ValType}
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, MethodResolveProcessor, ResolveProcessor}
 import org.jetbrains.plugins.scala.lang.resolve.{ResolveTargets, ScalaResolveResult}
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
@@ -41,10 +41,13 @@ object ExtensionConversionHelper {
       case FunctionType(resultType, _) => Some(resultType)
       case implicitParameterType =>
         implicit val project: Project = resolveResult.element.getProject
+        val ts = implicitParameterType.typeSystem
+        import ts.{Constraints, emptyConstraints}
+
         for {
           functionType <- ElementScope(project).cachedFunction1Type
-          substituted <- implicitParameterType.conforms(functionType, ConstraintSystem.empty) match {
-            case ConstraintSystem(substitutor) => Some(substitutor(functionType))
+          substituted <- implicitParameterType.conforms(functionType, emptyConstraints) match {
+            case Constraints.withSubstitutor(substitutor) => Some(substitutor(functionType))
             case _ => None
           }
 
@@ -85,10 +88,12 @@ object ExtensionConversionHelper {
 
   private def update(candidate: Candidate, foundInType: ScalaResolveResult)
                     (implicit context: ProjectContext = foundInType.projectContext): Candidate = {
+    val ts = context.typeSystem
+    import ts.Constraints
     val (candidateResult, candidateSubstitutor) = candidate
 
     foundInType.resultUndef.collect {
-      case ConstraintSystem(substitutor) => substitutor
+      case Constraints.withSubstitutor(substitutor) => substitutor
     }.fold(candidate) { substitutor =>
       val parameterType = candidateResult.implicitParameterType
       val result = candidateResult.copy(

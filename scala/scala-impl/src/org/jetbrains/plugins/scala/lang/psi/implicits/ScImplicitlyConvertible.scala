@@ -129,6 +129,8 @@ object ScImplicitlyConvertible {
 
   private def forMapImpl(element: PsiNamedElement, `type`: ScType, substitutor: ScSubstitutor)
                         (implicit expression: ScExpression) = {
+    implicit val ts: TypeSystem[ScType] = expression.projectContext.typeSystem
+
     val maybeTypes = element match {
       case function: ScFunction =>
         val returnType = function.returnType.map(substitutor)
@@ -153,7 +155,7 @@ object ScImplicitlyConvertible {
       case Some((argumentType, resultType)) if `type`.weakConforms(argumentType) =>
         val mapResult = element match {
           case function: ScFunction if function.hasTypeParameters =>
-            val constraints = `type`.conforms(argumentType, ConstraintSystem.empty).constraints
+            val constraints = `type`.conforms(argumentType, ts.emptyConstraints).constraints
             createSubstitutors(function, `type`, substitutor, constraints, resultType)
           case _ => Some(resultType, ScSubstitutor.empty)
         }
@@ -165,94 +167,103 @@ object ScImplicitlyConvertible {
 
   private def argumentAndReturnTypes(typeResult: TypeResult,
                                      argumentSubstitutor: ScSubstitutor = ScSubstitutor.empty)
-                                    (implicit place: ScExpression): Option[(ScType, ScType)] =
+                                    (implicit place: ScExpression): Option[(ScType, ScType)] = {
+    val ts = place.projectContext.typeSystem
+    import ts.{Constraints, emptyConstraints}
+
     for {
       functionType <- place.elementScope.cachedFunction1Type
       elementType <- typeResult.toOption
 
-      substitution = elementType.conforms(functionType, ConstraintSystem.empty) match {
-        case ConstraintSystem(newSubstitutor) => newSubstitutor
+      substitution = elementType.conforms(functionType, emptyConstraints) match {
+        case Constraints.withSubstitutor(newSubstitutor) => newSubstitutor
         case _ => Function.const(Nothing) _
       }
 
       Seq(argumentType, resultType) = functionType.typeArguments.map(substitution)
     } yield (argumentType, resultType)
+  }
 
   private def createSubstitutors(function: ScFunction,
                                  `type`: ScType,
                                  substitutor: ScSubstitutor,
-                                 constraints: ConstraintSystem,
+                                 constraints: ScConstraintSystem,
                                  resultType: ScType)
-                                (implicit place: ScExpression) = constraints match {
-    case ConstraintSystem(unSubst) =>
-      val typeParameters = function.typeParameters.map { typeParameter =>
-        typeParameter -> typeParameter.typeParamId
-      }
-      val typeParamIds = typeParameters.map(_._2).toSet
+                                (implicit place: ScExpression) = {
+    val ts = `type`.typeSystem
+    import ts.Constraints
 
-      var lastConstraints = constraints
-      val boundsSubstitutor = substitutor.andThen(unSubst)
+    constraints match {
+      case Constraints.withSubstitutor(unSubst) =>
+        val typeParameters = function.typeParameters.map { typeParameter =>
+          typeParameter -> typeParameter.typeParamId
+        }
+        val typeParamIds = typeParameters.map(_._2).toSet
 
-      def substitute(maybeBound: TypeResult) =
+        var lastConstraints = constraints
+        val boundsSubstitutor = substitutor.andThen(unSubst)
+
+        def substitute(maybeBound: TypeResult) =
+          for {
+            bound <- maybeBound.toOption
+            substituted = boundsSubstitutor(bound)
+            if !substituted.hasRecursiveTypeParameters(typeParamIds)
+          } yield substituted
+
         for {
-          bound <- maybeBound.toOption
-          substituted = boundsSubstitutor(bound)
-          if !substituted.hasRecursiveTypeParameters(typeParamIds)
-        } yield substituted
+          (typeParameter, typeParamId) <- typeParameters
+        } {
+          lastConstraints = substitute(typeParameter.lowerBound).fold(lastConstraints) {
+            lastConstraints.withLower(typeParamId, _)
+          }
 
-      for {
-        (typeParameter, typeParamId) <- typeParameters
-      } {
-        lastConstraints = substitute(typeParameter.lowerBound).fold(lastConstraints) {
-          lastConstraints.withLower(typeParamId, _)
+          lastConstraints = substitute(typeParameter.upperBound).fold(lastConstraints) {
+            lastConstraints.withUpper(typeParamId, _)
+          }
         }
 
-        lastConstraints = substitute(typeParameter.upperBound).fold(lastConstraints) {
-          lastConstraints.withUpper(typeParamId, _)
-        }
-      }
+        lastConstraints match {
+          case Constraints.withSubstitutor(lastSubstitutor) =>
+            val clauses = function.paramClauses.clauses
 
-      lastConstraints match {
-        case ConstraintSystem(lastSubstitutor) =>
-          val clauses = function.paramClauses.clauses
+            val parameters = clauses.headOption.toSeq.flatMap(_.parameters).map(Parameter(_))
 
-          val parameters = clauses.headOption.toSeq.flatMap(_.parameters).map(Parameter(_))
+            val dependentSubstitutor = ScSubstitutor.paramToType(parameters, Seq.fill(parameters.length)(`type`))
 
-          val dependentSubstitutor = ScSubstitutor.paramToType(parameters, Seq.fill(parameters.length)(`type`))
-
-          def dependentMethodTypes: Option[ScParameterClause] =
-            function.returnType.toOption.flatMap { functionType =>
-              clauses match {
-                case Seq(_, last) if last.isImplicit =>
-                  var result: Option[ScParameterClause] = None
-                  functionType.recursiveUpdate { t =>
-                    t match {
-                      case ScDesignatorType(p: ScParameter) if last.parameters.contains(p) =>
-                        result = Some(last)
-                      case _ =>
+            def dependentMethodTypes: Option[ScParameterClause] =
+              function.returnType.toOption.flatMap { functionType =>
+                clauses match {
+                  case Seq(_, last) if last.isImplicit =>
+                    var result: Option[ScParameterClause] = None
+                    functionType.recursiveUpdate { t =>
+                      t match {
+                        case ScDesignatorType(p: ScParameter) if last.parameters.contains(p) =>
+                          result = Some(last)
+                        case _ =>
+                      }
+                      if (result.isDefined) Stop
+                      else ProcessSubtypes
                     }
-                    if (result.isDefined) Stop
-                    else ProcessSubtypes
-                  }
 
-                  result
-                case _ => None
+                    result
+                  case _ => None
+                }
               }
-            }
 
-          val effectiveParameters = dependentMethodTypes.toSeq
-            .flatMap(_.effectiveParameters)
-            .map(Parameter(_))
+            val effectiveParameters = dependentMethodTypes.toSeq
+                                                          .flatMap(_.effectiveParameters)
+                                                          .map(Parameter(_))
 
-          val (inferredParameters, expressions, _) = findImplicits(effectiveParameters, None, place, canThrowSCE = false,
-            abstractSubstitutor = substitutor.followed(dependentSubstitutor).followed(unSubst))
+            val (inferredParameters, expressions, _) = findImplicits(effectiveParameters, None, place, canThrowSCE = false,
+              abstractSubstitutor = substitutor.followed(dependentSubstitutor).followed(unSubst))
 
-          Some(
-            lastSubstitutor(dependentSubstitutor(resultType)),
-            ScSubstitutor.paramToExprType(inferredParameters, expressions, useExpected = false)
-          )
-        case _ => None
-      }
-    case _ => None
+            Some(
+              lastSubstitutor(dependentSubstitutor(resultType)),
+              ScSubstitutor.paramToExprType(inferredParameters, expressions, useExpected = false)
+            )
+          case _ => None
+        }
+      case _ => None
+    }
   }
 }

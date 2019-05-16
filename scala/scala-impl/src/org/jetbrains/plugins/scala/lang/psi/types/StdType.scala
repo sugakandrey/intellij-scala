@@ -29,7 +29,7 @@ sealed class StdType(val name: String, val tSuper: Option[StdType])
     if (classes.isClassesRegistered) classes.byName(name) else None
   }
 
-  override def equivInner(`type`: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(`type`: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     val success = `type` match {
       case stdType: StdType => this == stdType
       case _ =>

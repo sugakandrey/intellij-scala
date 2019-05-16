@@ -162,10 +162,7 @@ class ScConstructorInvocationImpl(node: ASTNode) extends ScalaPsiElementImpl(nod
               )
 
               val extRes = Compatibility.checkConformanceExt(false, undefParams, paramsByClauses.map(_._1), false, false)
-              val maybeSubstitutor = extRes.constraints match {
-                case ConstraintSystem(substitutor) => Some(substitutor)
-                case _ => None
-              }
+              val maybeSubstitutor = extRes.constraints.substitutor
               val result = maybeSubstitutor.fold(nonValueType: ScType) {
                 _.apply(nonValueType)
               }

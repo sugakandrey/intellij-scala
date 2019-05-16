@@ -2,57 +2,43 @@ package org.jetbrains.plugins.scala.lang.psi
 package types
 package api
 
-import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.Computable
-import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
 import org.jetbrains.plugins.scala.caches.RecursionManager
 
 /**
   * @author adkozlov
   */
-trait Conformance {
-  typeSystem: TypeSystem[_] =>
+trait Conformance[Tpe <: ScalaType] {
+  typeSystem: TypeSystem[Tpe] =>
 
-  import TypeSystem._
   import ConstraintsResult.Left
 
-  private val guard = RecursionManager.RecursionGuard[Key, ConstraintsResult](s"${typeSystem.name}.conformance.guard")
-
-  private val cache = ContainerUtil.newConcurrentMap[Key, ConstraintsResult]()
+  private val guard = RecursionManager.RecursionGuard[CacheKey, ConstraintsResult[Tpe]](s"${typeSystem.name}.conformance.guard")
+  private val cache = ContainerUtil.newConcurrentMap[CacheKey, ConstraintsResult[Tpe]]()
 
   /**
-    * Checks, whether the following assignment is correct:
-    * val x: l = (y: r)
+    * Checks if the conformance relation (<:, "is subtype of"), as defined by SLS 3.5.2, holds.
     */
-  final def conformsInner(left: ScType, right: ScType,
-                          visited: Set[PsiClass] = Set.empty,
-                          constraints: ConstraintSystem = ConstraintSystem.empty,
-                          checkWeak: Boolean = false): ConstraintsResult = {
-    ProgressManager.checkCanceled()
-
-    if (left.isAny || right.isNothing || left == right) constraints
-    else if (right.canBeSameOrInheritor(left)) {
-      val result = conformsInner(Key(left, right, checkWeak), visited)
-      combine(result)(constraints)
-    } else Left
-  }
+  def conforms(lhs: Tpe, rhs: Tpe, constraints: ConstraintSystem[Tpe]): ConstraintsResult[Tpe]
 
   def clearCache(): Unit = cache.clear()
 
-  protected def conformsComputable(key: Key, visited: Set[PsiClass]): Computable[ConstraintsResult]
+  protected def conformsPreventingRecursion[A](
+    key:              CacheKey,
+    conformanceCheck: Computable[ConstraintsResult[Tpe]]
+  ): ConstraintsResult[Tpe] =
+    cache.get(key) match {
+      case null if guard.checkReentrancy(key) => Left
+      case null =>
+        val stackStamp = RecursionManager.markStack()
 
-  private def conformsInner(key: Key, visited: Set[PsiClass]) = cache.get(key) match {
-    case null if guard.checkReentrancy(key) => Left
-    case null =>
-      val stackStamp = RecursionManager.markStack()
-
-      guard.doPreventingRecursion(key, conformsComputable(key, visited)) match {
-        case null => Left
-        case result =>
-          if (stackStamp.mayCacheNow()) cache.put(key, result)
-          result
-      }
-    case cached => cached
-  }
+        guard.doPreventingRecursion(key, conformanceCheck) match {
+          case null => Left
+          case result =>
+            if (stackStamp.mayCacheNow()) cache.put(key, result)
+            result
+        }
+      case cached => cached
+    }
 }

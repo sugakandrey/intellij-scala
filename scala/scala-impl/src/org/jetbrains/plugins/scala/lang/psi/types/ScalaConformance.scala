@@ -28,14 +28,40 @@ import org.jetbrains.plugins.scala.util.ScEquivalenceUtil._
 import scala.collection.Seq
 import scala.collection.immutable.HashSet
 
-trait ScalaConformance extends api.Conformance with TypeVariableUnification {
+trait ScalaConformance extends api.Conformance[ScType] with TypeVariableUnification {
   typeSystem: api.TypeSystem[ScType] =>
 
-  override protected def conformsComputable(key: Key,
-                                            visited: Set[PsiClass]): Computable[ConstraintsResult] =
-    new Computable[ConstraintsResult] {
-      override def compute(): ConstraintsResult = {
-        val Key(left, right, checkWeak) = key
+  override def conforms(
+    lhs:         ScType,
+    rhs:         ScType,
+    constraints: ScConstraintSystem
+  ): ScConstraintsResult = conformsInner(rhs, lhs, constraints = constraints)
+
+  /**
+    * Checks, whether the following assignment is correct:
+    * val x: l = (y: r)
+    */
+  final def conformsInner(
+    left:        ScType,
+    right:       ScType,
+    visited:     Set[PsiClass] = Set.empty,
+    constraints: ScConstraintSystem = emptyConstraints,
+    checkWeak:   Boolean = false
+  ): ScConstraintsResult = {
+    ProgressManager.checkCanceled()
+
+    if (left.isAny || right.isNothing || left == right) constraints
+    else if (right.canBeSameOrInheritor(left)) {
+      val key    = CacheKey(left, right, checkWeak)
+      val result = conformsPreventingRecursion(key, conformsComputable(key, visited))
+      result.combineWith(constraints)
+    } else ConstraintsResult.Left
+  }
+
+  private def conformsComputable(key: CacheKey, visited: Set[PsiClass]): Computable[ScConstraintsResult] =
+    new Computable[ScConstraintsResult] {
+      override def compute(): ScConstraintsResult = {
+        val CacheKey(left, right, checkWeak) = key
 
         val leftVisitor = new LeftConformanceVisitor(key, visited)
         left.visitType(leftVisitor)
@@ -58,7 +84,7 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
                 if (lClass.hasTypeParameters) {
                   left.removeAliasDefinitions() match {
                     case _: ScParameterizedType =>
-                    case _ => return ConstraintSystem.empty
+                    case _ => return emptyConstraints
                   }
                 }
                 return conformsInner(left, inh.orNull, visited + rClass)
@@ -82,8 +108,8 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
     rhs:         TypeParameterType,
     l:           ScType,
     r:           ScType,
-    constraints: ConstraintSystem
-  ): ConstraintsResult = {
+    constraints: ScConstraintSystem
+  ): ScConstraintsResult = {
     val lo = lhs.lowerType
 
     if (!lhs.lowerType.equiv(lhs)) {
@@ -97,11 +123,11 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
     parametersIterator: Iterator[PsiTypeParameter],
     args1:              scala.Seq[ScType],
     args2:              scala.Seq[ScType],
-    _constraints:       ConstraintSystem,
+    _constraints:       ScConstraintSystem,
     visited:            Set[PsiClass],
     checkWeak:          Boolean,
     checkEquivalence:   Boolean = false
-  ): ConstraintsResult = {
+  ): ScConstraintsResult = {
     var constraints = _constraints
 
     def addAbstract(upper: ScType, lower: ScType, tp: ScType): Boolean = {
@@ -160,9 +186,9 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
     constraints
   }
 
-  private class LeftConformanceVisitor(key: Key, visited: Set[PsiClass]) extends ScalaTypeVisitor {
+  private class LeftConformanceVisitor(key: CacheKey, visited: Set[PsiClass]) extends ScalaTypeVisitor {
 
-    private val Key(l, r, checkWeak) = key
+    private val CacheKey(l, r, checkWeak) = key
 
     private implicit val projectContext: ProjectContext = l.projectContext
 
@@ -173,7 +199,7 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
         .withUpper(name, `type`, variance = Invariant)
     }
 
-    def checkArrayArgs(leftArg: ScType, rightArg: ScType): ConstraintsResult = {
+    def checkArrayArgs(leftArg: ScType, rightArg: ScType): ScConstraintsResult = {
 
       (leftArg, rightArg) match {
         case (ScAbstractType(_, lower, upper), right) =>
@@ -429,8 +455,8 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
     trait CompoundTypeVisitor extends ScalaTypeVisitor {
       override def visitCompoundType(c: ScCompoundType) {
         val comps = c.components
-        var results = Set[ConstraintSystem]()
-        def traverse(check: (ScType, ConstraintSystem) => ConstraintsResult): Unit = {
+        var results = Set[ScConstraintSystem]()
+        def traverse(check: (ScType, ScConstraintSystem) => ScConstraintsResult): Unit = {
           val iterator = comps.iterator
           while (iterator.hasNext) {
             val comp = iterator.next()
@@ -440,7 +466,7 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
             }
           }
         }
-        traverse(typeSystem.equivInner(l, _, _))
+        traverse(typeSystem.equiv(l, _, _))
         if (results.isEmpty) {
           traverse(conformsInner(l, _, HashSet.empty, _))
         }
@@ -449,7 +475,7 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
           result = results.head
           return
         } else if (results.size > 1) {
-          result = ConstraintSystem(results)
+          result = multiConstraintSystem(results)
           return
         }
 
@@ -502,10 +528,10 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
       }
     }
 
-    private var result: ConstraintsResult = null
-    private var constraints: ConstraintSystem = ConstraintSystem.empty
+    private var result: ScConstraintsResult = _
+    private var constraints: ScConstraintSystem = emptyConstraints
 
-    def getResult: ConstraintsResult = result
+    def getResult: ScConstraintsResult = result
 
     override def visitStdType(x: StdType) {
       var rightVisitor: ScalaTypeVisitor =
@@ -1049,7 +1075,7 @@ trait ScalaConformance extends api.Conformance with TypeVariableUnification {
       }
 
       conformsInner(updatedWithUndefinedTypes, r, HashSet.empty, constraints) match {
-        case unSubst@ConstraintSystem(solvingSubstitutor) =>
+        case unSubst @ Constraints.withSubstitutor(solvingSubstitutor) =>
           for (un <- undefines if result == null) {
             val solvedType = solvingSubstitutor(un)
 
@@ -1411,8 +1437,8 @@ private object ScalaConformance {
   private[psi] def addParam(
     typeParameter: TypeParameter,
     bound:         ScType,
-    constraints:   ConstraintSystem
-  ): ConstraintSystem =
+    constraints:   ScConstraintSystem
+  ): ScConstraintSystem =
     bound match {
       case HKAbstract() => constraints
       case _ =>

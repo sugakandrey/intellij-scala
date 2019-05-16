@@ -33,6 +33,7 @@ import org.jetbrains.plugins.scala.lang.resolve._
 import org.jetbrains.plugins.scala.lang.resolve.processor.{BaseProcessor, MostSpecificUtil}
 import org.jetbrains.plugins.scala.project.{ProjectContext, _}
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
+import org.jetbrains.plugins.scala.project.{ProjectContext, _}
 import org.jetbrains.plugins.scala.settings.ScalaProjectSettings
 import org.jetbrains.plugins.scala.util.BetterMonadicForSupport.Implicit0Binding
 
@@ -531,7 +532,7 @@ class ImplicitCollector(place: PsiElement,
       val element = coreElement.getOrElse(place)
 
       def equivOrDominates(tp: ScType, found: ScType): Boolean =
-        found.equiv(tp, ConstraintSystem.empty, falseUndef = false).isRight || dominates(tp, found)
+        found.equiv(tp, tp.typeSystem.emptyConstraints, falseUndef = false).isRight || dominates(tp, found)
 
       def checkRecursive(tp: ScType, searches: Seq[ScType]): Boolean = searches.exists(equivOrDominates(tp, _))
 

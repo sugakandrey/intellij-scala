@@ -6,9 +6,6 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
 import org.jetbrains.plugins.scala.macroAnnotations.CachedInUserData
 import org.jetbrains.plugins.scala.project.ProjectContext
 
-/**
- * @author adkozlov
- */
 final class DottyTypeSystem private (implicit val projectContext: ProjectContext)
     extends TypeSystem[DotType]
     with DottyEquivalence
@@ -17,7 +14,8 @@ final class DottyTypeSystem private (implicit val projectContext: ProjectContext
     with DottyPsiTypeBridge
     with DottyTypePresentation
     with DottyStdTypes
-    with DottyTyper {
+    with DottyTyper
+    with DottyConstraintHandling {
 
   override val name = "Dotty"
 }

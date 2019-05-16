@@ -1,7 +1,6 @@
 package org.jetbrains.plugins.scala.lang.psi.types.nonvalue
 
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.TypeParamIdOwner
-import org.jetbrains.plugins.scala.lang.psi.types.ConstraintSystem.SubstitutionBounds
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.ProcessSubtypes
@@ -62,7 +61,8 @@ final case class ScTypePolymorphicType(internalType: ScType, typeParameters: Seq
       if (retTpeConformance.isLeft) abstractTypeSubstitutor
       else
         retTpeConformance.constraints.substitutionBounds(canThrowSCE = false) match {
-          case Some(SubstitutionBounds(_, lowerMap, upperMap)) =>
+          case Some(bounds) =>
+            import bounds._
             ScSubstitutor.bind(typeParameters) { tp =>
               val varianceInParams = params.map(_.paramType).foldLeft(Variance.Bivariant) {
                 case (acc, tpe) => acc & tp.varianceInType(tpe)
@@ -129,7 +129,7 @@ final case class ScTypePolymorphicType(internalType: ScType, typeParameters: Seq
     polymorphicTypeSubstitutor(internalType.inferValueType).asInstanceOf[ValueType]
   }
 
-  override def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     var lastConstraints = constraints
     r match {
       case p: ScTypePolymorphicType =>

@@ -22,11 +22,11 @@ import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScType
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.refactoring.util.{ScTypeUtil, ScalaNamesUtil}
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
+import org.jetbrains.plugins.scala.project.ProjectContextOwner
 
 import scala.annotation.tailrec
 
-trait ScalaTypePresentation extends TypePresentation[ScType] {
-  self: TypeSystem[ScType] =>
+trait ScalaTypePresentation extends TypePresentation[ScType] { this: ProjectContextOwner =>
 
   import ScalaTypePresentation._
 

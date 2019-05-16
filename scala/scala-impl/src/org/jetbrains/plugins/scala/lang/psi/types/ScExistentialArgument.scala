@@ -23,7 +23,7 @@ trait ScExistentialArgument extends NamedType with ValueType {
 
   def copyWithBounds(newLower: ScType, newUpper: ScType): ScExistentialArgument
 
-  override def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     r match {
       case arg: ScExistentialArgument =>
         val s = ScSubstitutor.bind(arg.typeParameters, typeParameters)(TypeParameterType(_))

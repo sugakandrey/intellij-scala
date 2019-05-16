@@ -24,11 +24,11 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorTyp
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
+import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 import org.jetbrains.plugins.scala.macroAnnotations.{Cached, CachedWithRecursionGuard, ModCount}
 import org.jetbrains.plugins.scala.project.ProjectPsiElementExt
 import org.jetbrains.plugins.scala.project.ScalaLanguageLevel.Scala_2_11
 import org.jetbrains.plugins.scala.util.SAMUtil
-import org.jetbrains.plugins.scala.lang.typeInference.Parameter
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -330,10 +330,13 @@ object ScExpression {
                   extractImplicitParameterType(res).flatMap {
                     case FunctionType(rt, Seq(_)) => Some(rt)
                     case paramType =>
+                      val ts = paramType.typeSystem
+                      import ts.{Constraints, emptyConstraints}
+
                       expr.elementScope.cachedFunction1Type.flatMap { functionType =>
-                        paramType.conforms(functionType, ConstraintSystem.empty) match {
-                          case ConstraintSystem(substitutor) => Some(substitutor(functionType.typeArguments(1)))
-                          case _ => None
+                        paramType.conforms(functionType, emptyConstraints) match {
+                          case Constraints.withSubstitutor(substitutor) => Some(substitutor(functionType.typeArguments(1)))
+                          case _                                        => None
                         }
                       }.filterNot {
                         _.isInstanceOf[UndefinedType]
@@ -409,7 +412,6 @@ object ScExpression {
 
     //numeric literal narrowing
     def isNarrowing(expected: ScType): Option[TypeResult] = {
-      import expr.projectContext
 
       def isByte(v: Long) = v >= scala.Byte.MinValue && v <= scala.Byte.MaxValue
 

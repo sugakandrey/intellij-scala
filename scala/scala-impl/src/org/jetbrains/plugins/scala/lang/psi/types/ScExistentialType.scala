@@ -23,7 +23,7 @@ final class ScExistentialType private (val quantified: ScType,
     quantified.isAliasType.map(a => a.copy(lower = a.lower.map(_.unpackedType), upper = a.upper.map(_.unpackedType)))
   }
 
-  override def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     if (r.equiv(Nothing)) return quantified.equiv(Nothing, constraints)
     val simplified = simplify()
     if (this != simplified) return simplified.equiv(r, constraints, falseUndef)
@@ -93,7 +93,7 @@ final class ScExistentialType private (val quantified: ScType,
       case poly: ScTypePolymorphicType if poly.typeParameters.length == wildcards.length =>
         val list = wildcards.zip(poly.typeParameters)
         val iterator = list.iterator
-        var t: ConstraintsResult = constraints
+        var t: ScConstraintsResult = constraints
 
         while (iterator.hasNext) {
           val (w, tp) = iterator.next()

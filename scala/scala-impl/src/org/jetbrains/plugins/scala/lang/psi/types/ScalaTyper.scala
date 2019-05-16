@@ -5,9 +5,10 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScTypeParam, 
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypeBoundsOwner
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.result.{TypeResult, Typeable}
+import org.jetbrains.plugins.scala.project.ProjectContextOwner
 
 trait ScalaTyper extends api.Typer[ScType] {
-  this: TypeSystem[ScType] =>
+  this: ProjectContextOwner =>
 
   override def tpe(target: Typeable): TypeResult = target.`type`()
 

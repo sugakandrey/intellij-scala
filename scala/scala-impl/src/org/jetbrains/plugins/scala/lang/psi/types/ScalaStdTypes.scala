@@ -1,8 +1,9 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
-import org.jetbrains.plugins.scala.lang.psi.types.api.{StdTypes, TypeSystem}
+import org.jetbrains.plugins.scala.lang.psi.types.api.StdTypes
+import org.jetbrains.plugins.scala.project.ProjectContextOwner
 
-trait ScalaStdTypes extends StdTypes[ScType] { this: TypeSystem[ScType] =>
+trait ScalaStdTypes extends StdTypes[ScType] { this: ProjectContextOwner =>
   private[this] lazy val types: ScStdTypes = ScStdTypes.instance
 
   override lazy val Any: ScType     = types.Any

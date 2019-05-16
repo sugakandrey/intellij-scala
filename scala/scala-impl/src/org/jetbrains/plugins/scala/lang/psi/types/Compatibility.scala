@@ -19,7 +19,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScParameter, 
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.imports.usages.ImportUsed
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.synthetic.ScSyntheticFunction
 import org.jetbrains.plugins.scala.lang.psi.implicits.ImplicitCollector
-import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, UndefinedType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{FunctionType, TypeSystem, UndefinedType}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.refactoring.util.ScalaNamesUtil
@@ -56,6 +56,8 @@ object Compatibility {
     private def eval(typez: ScType, expectedOption: Option[ScType]): (TypeResult, Set[ImportUsed]) =
       expectedOption.filterNot(typez.conforms(_)).flatMap { expected =>
         implicit val elementScope: ElementScope = place.elementScope
+        val ts = typez.typeSystem
+        import ts.{Constraints, emptyConstraints}
 
         val functionType = FunctionType(expected, Seq(typez))
         new ImplicitCollector(place, functionType, functionType, None, isImplicitConversion = true).collect() match {
@@ -64,8 +66,8 @@ object Compatibility {
               case FunctionType(rt, Seq(_)) => Some(rt)
               case paramType =>
                 elementScope.cachedFunction1Type.flatMap { functionType =>
-                  paramType.conforms(functionType, ConstraintSystem.empty) match {
-                    case ConstraintSystem(substitutor) => Some(substitutor(functionType.typeArguments(1)))
+                  paramType.conforms(functionType, emptyConstraints) match {
+                    case Constraints.withSubstitutor(substitutor) => Some(substitutor(functionType.typeArguments(1)))
                     case _ => None
                   }
                 }.filterNot {
@@ -118,7 +120,7 @@ object Compatibility {
                        parameters: Seq[Parameter],
                        exprs: Seq[Expression],
                        checkWithImplicits: Boolean)
-                      (implicit project: ProjectContext): ConstraintsResult = {
+                      (implicit project: ProjectContext): ScConstraintsResult = {
     val r = checkConformanceExt(checkNames, parameters, exprs, checkWithImplicits, isShapesResolve = false)
 
     if (r.problems.nonEmpty) ConstraintsResult.Left
@@ -133,13 +135,13 @@ object Compatibility {
   }
 
   case class ConformanceExtResult(problems: Seq[ApplicabilityProblem],
-                                  constraints: ConstraintSystem,
+                                  constraints: ScConstraintSystem,
                                   defaultParameterUsed: Boolean = false,
                                   matched: Seq[(Parameter, ScExpression, ScType)] = Seq())
 
   object ConformanceExtResult {
     def apply(problems: Seq[ApplicabilityProblem])(implicit project: ProjectContext): ConformanceExtResult =
-      ConformanceExtResult(problems, ConstraintSystem.empty)
+      ConformanceExtResult(problems, project.typeSystem.emptyConstraints)
   }
 
   def collectSimpleProblems(exprs: Seq[Expression], parameters: Seq[Parameter]): Seq[ApplicabilityProblem] = {
@@ -169,8 +171,10 @@ object Compatibility {
                           checkWithImplicits: Boolean,
                           isShapesResolve: Boolean)
                          (implicit project: ProjectContext): ConformanceExtResult = {
+    implicit val ts: TypeSystem[ScType] = project.typeSystem
+
     ProgressManager.checkCanceled()
-    var constraintAccumulator = ConstraintSystem.empty
+    var constraintAccumulator = project.typeSystem.emptyConstraints
 
     val clashedAssignments = clashedAssignmentsIn(exprs)
 
@@ -224,7 +228,7 @@ object Compatibility {
             matched ::= (param, expr.expr, exprType)
             if (!conforms) List(TypeMismatch(expr.expr, paramType))
             else {
-              constraintAccumulator += exprType.conforms(paramType, ConstraintSystem.empty, checkWeak = true).constraints
+              constraintAccumulator += exprType.conforms(paramType, ts.emptyConstraints, checkWeak = true).constraints
               List.empty
             }
         }
@@ -249,7 +253,7 @@ object Compatibility {
               for (exprType <- expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType)).tr.toOption) {
                 if (exprType.weakConforms(tp)) {
                   matched ::= (param, expr, exprType)
-                  constraintAccumulator += exprType.conforms(tp, ConstraintSystem.empty, checkWeak = true).constraints
+                  constraintAccumulator += exprType.conforms(tp, ts.emptyConstraints, checkWeak = true).constraints
                 } else {
                   return ConformanceExtResult(Seq(TypeMismatch(expr, tp)), constraintAccumulator, defaultParameterUsed, matched)
                 }
@@ -300,7 +304,7 @@ object Compatibility {
                 for (exprType <- expr.getTypeAfterImplicitConversion(checkWithImplicits, isShapesResolve, Some(expectedType)).tr.toOption) {
                   if (exprType.weakConforms(paramType)) {
                     matched ::= (param, expr, exprType)
-                    constraintAccumulator += exprType.conforms(paramType, ConstraintSystem.empty, checkWeak = true).constraints
+                    constraintAccumulator += exprType.conforms(paramType, ts.emptyConstraints, checkWeak = true).constraints
                   } else {
                     problems ::= TypeMismatch(expr, paramType)
                   }
@@ -333,7 +337,7 @@ object Compatibility {
               constraintAccumulator, defaultParameterUsed, matched)
           } else {
             matched ::= (parameters.last, exprs(k).expr, exprType)
-            constraintAccumulator += exprType.conforms(paramType, ConstraintSystem.empty, checkWeak = true).constraints
+            constraintAccumulator += exprType.conforms(paramType, ts.emptyConstraints, checkWeak = true).constraints
           }
         }
         k = k + 1
@@ -359,7 +363,7 @@ object Compatibility {
                 .get // safe (see defaultType implementation)
               matched ::= (param, expr, defaultTp)
 
-              constraintAccumulator += defaultTp.conforms(paramType, ConstraintSystem.empty).constraints
+              constraintAccumulator += defaultTp.conforms(paramType, ts.emptyConstraints).constraints
             case Some(defaultTp) =>
                 return ConformanceExtResult(Seq(DefaultTypeParameterMismatch(defaultTp, paramType)), constraintAccumulator,
                   defaultParameterUsed = true, matched)
@@ -447,6 +451,8 @@ object Compatibility {
                                   argClauses: Seq[ScArgumentExprList],
                                   paramClauses: Seq[ScParameterClause])
                                  (implicit project: ProjectContext): ConformanceExtResult = {
+    val ts = project.typeSystem
+    import ts.Constraints
 
     // a first empty argument clause might lack
     val nonEmptyArgClause =
@@ -479,8 +485,8 @@ object Compatibility {
         )
 
         val newSubstitutor = curRes.constraints match {
-          case ConstraintSystem(csSubstitutor) => prevSubstitutor.followed(csSubstitutor)
-          case _ => prevSubstitutor
+          case Constraints.withSubstitutor(csSubstitutor) => prevSubstitutor.followed(csSubstitutor)
+          case _                                          => prevSubstitutor
         }
 
         res -> newSubstitutor

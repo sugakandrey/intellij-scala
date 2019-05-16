@@ -66,7 +66,7 @@ final class ScParameterizedType private(val designator: ScType, val typeArgument
     }
   }
 
-  override def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     val Conformance: ScalaConformance = typeSystem
     val Nothing = projectContext.stdTypes.Nothing
 

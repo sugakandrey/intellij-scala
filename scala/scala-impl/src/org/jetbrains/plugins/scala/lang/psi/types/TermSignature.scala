@@ -18,7 +18,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScMember
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.{ScNamedElement, ScTypedDefinition}
 import org.jetbrains.plugins.scala.lang.psi.light.{ScFunctionWrapper, ScPrimaryConstructorWrapper}
 import org.jetbrains.plugins.scala.lang.psi.types.TermSignature._
-import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, PsiTypeParamatersExt}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{Any, PsiTypeParamatersExt, TypeSystem}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.SubtypeUpdater._
 import org.jetbrains.plugins.scala.lang.psi.types.result._
@@ -36,6 +36,7 @@ class TermSignature(_name: String,
                     val hasRepeatedParam: Array[Int] = Array.empty) extends Signature with ProjectContextOwner {
 
   override implicit def projectContext: ProjectContext = namedElement
+  private[this] implicit val ts: TypeSystem[ScType] = projectContext.typeSystem
 
   val name: String = ScalaNamesUtil.clean(_name)
 
@@ -77,12 +78,12 @@ class TermSignature(_name: String,
   }
 
   def paramTypesEquiv(other: TermSignature): Boolean = {
-    paramTypesEquivExtended(other, ConstraintSystem.empty, falseUndef = true).isRight
+    paramTypesEquivExtended(other, ts.emptyConstraints, falseUndef = true).isRight
   }
 
 
-  def paramTypesEquivExtended(other: TermSignature, constraints: ConstraintSystem,
-                              falseUndef: Boolean): ConstraintsResult = {
+  def paramTypesEquivExtended(other: TermSignature, constraints: ScConstraintSystem,
+                              falseUndef: Boolean): ScConstraintsResult = {
 
     if (paramLength != other.paramLength ||
         paramLength > 0 && paramClauseSizes =!= other.paramClauseSizes ||

@@ -21,8 +21,6 @@ import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 import org.jetbrains.plugins.scala.lang.typeInference._
 
 trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
-  private[this] implicit val ts: TypeSystem[DotType] = this
-
   override def tpe(target: Typeable): TypeResultT[DotType] = notImplemented
 
   override def extractTypeBound(

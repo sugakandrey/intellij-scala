@@ -2,7 +2,7 @@ package org.jetbrains.plugins.scala.lang.psi.types.api
 
 import org.jetbrains.plugins.scala.lang.psi.types.ScalaType
 
-trait StdTypes[Tpe <: ScalaType] { this: TypeSystem[Tpe] =>
+trait StdTypes[Tpe <: ScalaType] {
   val Any: Tpe
   val AnyRef: Tpe
   val AnyVal: Tpe

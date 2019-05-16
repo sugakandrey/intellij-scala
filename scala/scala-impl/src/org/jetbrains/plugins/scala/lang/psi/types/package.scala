@@ -20,6 +20,11 @@ import scala.util.control.NoStackTrace
   * @author adkozlov
   */
 package object types {
+  type ScConstraintSystem   = ConstraintSystem[ScType]
+  type ScConstraintsResult  = ConstraintsResult[ScType]
+  type DotConstraintSystem  = ConstraintSystem[DotType]
+  type DotConstraintsResult = ConstraintsResult[DotType]
+
   implicit class ScalaTypeSeqExt(private val tpes: Seq[ScalaType]) extends AnyVal {
     def sc: Seq[ScType]   = tpes.asInstanceOf[Seq[ScType]]
     def dot: Seq[DotType] = tpes.asInstanceOf[Seq[DotType]]
@@ -44,7 +49,7 @@ package object types {
       typeSystem.equiv(scType, `type`)
     }
 
-    def equiv(`type`: ScType, constraints: ConstraintSystem, falseUndef: Boolean = true): ConstraintsResult = {
+    def equiv(`type`: ScType, constraints: ConstraintSystem[ScType], falseUndef: Boolean = true): ConstraintsResult[ScType] = {
       typeSystem.equivInner(scType, `type`, constraints, falseUndef)
     }
 
@@ -57,33 +62,33 @@ package object types {
     }
 
     def conformanceSubstitutor(`type`: ScType): Option[ScSubstitutor] = {
-      implicit val context: ProjectContext = `type`.projectContext
-      conforms(`type`, ConstraintSystem.empty) match {
-        case ConstraintSystem(substitutor) => Some(substitutor)
-        case _ => None
+      conforms(`type`, typeSystem.emptyConstraints) match {
+        case typeSystem.Constraints.withSubstitutor(substitutor) => Some(substitutor)
+        case _                             => None
       }
     }
 
     /** see scala.tools.nsc.typechecker.Infer.Inferencer#isConservativelyCompatible from scalac */
-    def isConservativelyCompatible(pt: ScType): ConstraintsResult = {
-      def tryConformanceNoParams(fullResults: ConstraintsResult): ConstraintsResult = scType match {
-        case ScMethodType(retTpe, ps, _) if ps.isEmpty => retTpe.conforms(pt, ConstraintSystem.empty, checkWeak = true)
+    def isConservativelyCompatible(pt: ScType): ConstraintsResult[ScType] = {
+      def tryConformanceNoParams(fullResults: ConstraintsResult[ScType]): ConstraintsResult[ScType] = scType match {
+        case ScMethodType(retTpe, ps, _) if ps.isEmpty => retTpe.conforms(pt, typeSystem.emptyConstraints, checkWeak = true)
         case _                                         => fullResults
       }
 
-      if (pt.isUnit) ConstraintSystem.empty // can perform unit coercion
+      if (pt.isUnit) typeSystem.emptyConstraints // can perform unit coercion
       else {
-        val conformanceResult = conforms(pt, ConstraintSystem.empty, checkWeak = true)
+        val conformanceResult = conforms(pt, typeSystem.emptyConstraints, checkWeak = true)
         if (conformanceResult.isRight) conformanceResult
         else                           tryConformanceNoParams(conformanceResult)
       }
     }
 
-    def conforms(`type`: ScType,
-                 constraints: ConstraintSystem,
-                 checkWeak: Boolean = false): ConstraintsResult = {
+    def conforms(
+      `type`:      ScType,
+      constraints: ConstraintSystem[ScType],
+      checkWeak:   Boolean = false
+    ): ConstraintsResult[ScType] =
       typeSystem.conformsInner(`type`, scType, constraints = constraints, checkWeak = checkWeak)
-    }
 
     def glb(`type`: ScType, checkWeak: Boolean = false): ScType = {
       typeSystem.glb(scType, `type`, checkWeak)

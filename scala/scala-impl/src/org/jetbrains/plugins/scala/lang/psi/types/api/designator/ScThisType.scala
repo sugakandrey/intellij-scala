@@ -4,7 +4,7 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypedDefinition
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.{ScObject, ScTemplateDefinition}
 import org.jetbrains.plugins.scala.lang.psi.types.api.TypeVisitor
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
-import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintSystem, ConstraintsResult, LeafType, ScType, ScTypeExt}
+import org.jetbrains.plugins.scala.lang.psi.types.{ConstraintsResult, LeafType, ScConstraintSystem, ScConstraintsResult, ScType, ScTypeExt}
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil
 
 /**
@@ -33,7 +33,7 @@ case class ScThisType(element: ScTemplateDefinition) extends DesignatorOwner wit
 
   override private[types] def designatorSingletonType = None
 
-  override def equivInner(`type`: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(`type`: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     (this, `type`) match {
       case (ScThisType(clazz1), ScThisType(clazz2)) =>
         if (ScEquivalenceUtil.areClassesEquivalent(clazz1, clazz2)) constraints

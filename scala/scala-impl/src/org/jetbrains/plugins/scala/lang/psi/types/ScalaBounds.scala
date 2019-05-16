@@ -16,15 +16,14 @@ import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.ScTypePolymorphicType
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
+import org.jetbrains.plugins.scala.project.ProjectContextOwner
 import org.jetbrains.plugins.scala.util.ScEquivalenceUtil.smartEquivalence
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-trait ScalaBounds extends api.Bounds[ScType] {
-  typeSystem: api.TypeSystem[ScType] =>
-
+trait ScalaBounds extends api.Bounds[ScType] { this: ConstraintHandling[ScType] with ProjectContextOwner =>
   import ScalaBounds._
 
   def glb(t1: ScType, t2: ScType, checkWeak: Boolean = false): ScType = {
@@ -126,7 +125,7 @@ trait ScalaBounds extends api.Bounds[ScType] {
     lubDepthAdjust(td, td max bd)
   }
 
-  private def conforms(t1: ScType, t2: ScType, checkWeak: Boolean) = t1.conforms(t2, ConstraintSystem.empty, checkWeak).isRight
+  private def conforms(t1: ScType, t2: ScType, checkWeak: Boolean) = t1.conforms(t2, emptyConstraints, checkWeak).isRight
 
   //This weird method is copy from Scala compiler. See scala.reflect.internal.Types#lubDepthAdjust
   private def lubDepthAdjust(td: Int, bd: Int): Int = {

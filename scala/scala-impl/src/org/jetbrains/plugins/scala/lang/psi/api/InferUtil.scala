@@ -16,7 +16,6 @@ import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory.{createE
 import org.jetbrains.plugins.scala.lang.psi.implicits.ImplicitCollector.ImplicitState
 import org.jetbrains.plugins.scala.lang.psi.implicits.{ImplicitCollector, ImplicitsRecursionGuard}
 import org.jetbrains.plugins.scala.lang.psi.types.Compatibility.{ConformanceExtResult, Expression}
-import org.jetbrains.plugins.scala.lang.psi.types.ConstraintSystem.SubstitutionBounds
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api._
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorType, ScProjectionType, ScThisType}
@@ -465,6 +464,8 @@ object InferUtil {
                                              filterTypeParams: Boolean = true
                                             ): (ScTypePolymorphicType, ConformanceExtResult) = {
     implicit val projectContext: ProjectContext = retType.projectContext
+    val ts: TypeSystem[ScType] = retType.typeSystem
+    import ts.Constraints
 
     val typeParamIds = typeParams.map(_.typeParamId).toSet
     def hasRecursiveTypeParams(typez: ScType): Boolean = typez.hasRecursiveTypeParameters(typeParamIds)
@@ -481,7 +482,8 @@ object InferUtil {
 
     val tpe = if (problems.isEmpty) {
       constraints.substitutionBounds(canThrowSCE) match {
-        case Some(bounds@SubstitutionBounds(_, lowerMap, upperMap)) =>
+        case Some(bounds) =>
+          import bounds._
           val unSubst = bounds.substitutor
           if (!filterTypeParams) {
 
@@ -516,7 +518,7 @@ object InferUtil {
             })
           } else {
 
-            def addConstraints(un: ConstraintSystem, tp: TypeParameter): ConstraintSystem = {
+            def addConstraints(un: ScConstraintSystem, tp: TypeParameter): ScConstraintSystem = {
               val typeParamId = tp.typeParamId
               val substedLower = unSubst(tp.lowerType)
               val substedUpper = unSubst(tp.upperType)
@@ -586,7 +588,7 @@ object InferUtil {
             )
 
             newConstraints match {
-              case ConstraintSystem(substitutor) => updateWithSubst(substitutor)
+              case Constraints.withSubstitutor(substitutor) => updateWithSubst(substitutor)
               case _ if !canThrowSCE             => updateWithSubst(unSubst)
               case _                             => throw new SafeCheckException
             }

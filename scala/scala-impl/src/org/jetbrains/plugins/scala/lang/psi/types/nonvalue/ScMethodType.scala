@@ -25,7 +25,7 @@ final case class ScMethodType(result: ScType, params: Seq[Parameter], isImplicit
     }))
   }
 
-  override def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult = {
+  override def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult = {
     var lastConstraints = constraints
     r match {
       case m: ScMethodType =>

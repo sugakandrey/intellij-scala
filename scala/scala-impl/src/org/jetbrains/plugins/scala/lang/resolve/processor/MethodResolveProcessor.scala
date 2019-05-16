@@ -188,6 +188,8 @@ object MethodResolveProcessor {
                           isShapeResolve: Boolean): ConformanceExtResult = {
 
     implicit val ctx: ProjectContext = c.element
+    val ts: TypeSystem[ScType] = ctx.typeSystem
+    import ts.Constraints
 
     val problems = new ArrayBuffer[ApplicabilityProblem]()
 
@@ -242,6 +244,7 @@ object MethodResolveProcessor {
       if (conformance.isLeft && !expected.equiv(api.Unit)) {
         problems += ExpectedTypeMismatch
       }
+      implicit val ts: TypeSystem[ScType] = retType.typeSystem
       result match {
         case Some(aResult) =>
           val substitutor =
@@ -425,7 +428,7 @@ object MethodResolveProcessor {
 
     if (result.problems.forall(_ == ExpectedTypeMismatch)) {
       val maybeResult = result.constraints match {
-        case undefined@ConstraintSystem(newSubstitutor) =>
+        case undefined @ Constraints.withSubstitutor(newSubstitutor) =>
           val typeParamIds = typeParameters.map {
             _.typeParamId
           }.toSet
@@ -454,8 +457,8 @@ object MethodResolveProcessor {
           }
 
           uSubst match {
-            case ConstraintSystem(_) => Some(result)
-            case _ => None
+            case Constraints.withSubstitutor(_) => Some(result)
+            case _                              => None
           }
         case _ => None
       }

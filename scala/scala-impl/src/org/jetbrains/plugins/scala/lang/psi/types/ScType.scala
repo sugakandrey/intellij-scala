@@ -59,7 +59,7 @@ trait ScType extends ScalaType with ProjectContextOwner {
     case ex                                                                => ex
   }
 
-  def equivInner(r: ScType, constraints: ConstraintSystem, falseUndef: Boolean): ConstraintsResult =
+  def equivInner(r: ScType, constraints: ScConstraintSystem, falseUndef: Boolean): ScConstraintsResult =
     ConstraintsResult.Left
 
   def visitType(visitor: TypeVisitor)

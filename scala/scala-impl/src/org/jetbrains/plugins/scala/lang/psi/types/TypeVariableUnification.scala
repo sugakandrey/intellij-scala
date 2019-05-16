@@ -4,7 +4,7 @@ import com.intellij.psi.PsiClass
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params._
 import org.jetbrains.plugins.scala.lang.psi.types.ScalaConformance._
 import org.jetbrains.plugins.scala.lang.psi.types.SmartSuperTypeUtil._
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameterType, _}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, TypeParameterType, TypeSystem}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.ScTypePolymorphicType
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 import org.jetbrains.plugins.scala.project._
@@ -13,7 +13,7 @@ import org.jetbrains.plugins.scala.project._
   * Conformance parts related to HK type-variable unification
   * and related kind-checking infrastructure.
   */
-trait TypeVariableUnification { self: ScalaConformance with ProjectContextOwner =>
+trait TypeVariableUnification { self: TypeSystem[ScType] with ScalaConformance =>
   import TypeVariableUnification._
 
   /**
@@ -27,18 +27,18 @@ trait TypeVariableUnification { self: ScalaConformance with ProjectContextOwner 
   private[this] def unifyTypeVariable(
     typeVariable: ParameterizedType,
     tpe:          ParameterizedType,
-    constraints:  ConstraintSystem,
+    constraints:  ScConstraintSystem,
     boundKind:    Bound,
     visited:      Set[PsiClass],
     checkWeak:    Boolean
-  ): ConstraintsResult = {
+  ): ScConstraintsResult = {
     val (tvDes, tvArgs, addBounds) = typeVariable match {
       case ParameterizedType(UndefinedOrWildcard(tp, bounds), typeArgs) => (tp, typeArgs, bounds)
       case _ =>
         throw new IllegalArgumentException(s"Only higher-order type variables can be unified, actual: ${typeVariable.canonicalText}")
     }
 
-    def addBound(constraints: ConstraintSystem, bound: ScType): ConstraintSystem =
+    def addBound(constraints: ScConstraintSystem, bound: ScType): ScConstraintSystem =
       if (!addBounds) constraints
       else
         boundKind match {
@@ -101,12 +101,12 @@ trait TypeVariableUnification { self: ScalaConformance with ProjectContextOwner 
   private[this] def tryUnifyParent(
     hkTv:        ParameterizedType,
     tpe:         ParameterizedType,
-    constraints: ConstraintSystem,
+    constraints: ScConstraintSystem,
     boundKind:   Bound,
     visited:     Set[PsiClass],
     checkWeak:   Boolean
-  ): ConstraintsResult = {
-    var unificationConstraints: ConstraintsResult = ConstraintsResult.Left
+  ): ScConstraintsResult = {
+    var unificationConstraints: ScConstraintsResult = ConstraintsResult.Left
 
     boundKind match {
       case Bound.Lower =>
@@ -135,11 +135,11 @@ trait TypeVariableUnification { self: ScalaConformance with ProjectContextOwner 
   private[psi] final def unifyHK(
     hkTv:        ParameterizedType,
     tpe:         ParameterizedType,
-    constraints: ConstraintSystem,
+    constraints: ScConstraintSystem,
     boundKind:   Bound,
     visited:     Set[PsiClass],
     checkWeak:   Boolean
-  ): ConstraintsResult =
+  ): ScConstraintsResult =
       unifyTypeVariable(hkTv, tpe, constraints, boundKind, visited, checkWeak) match {
         case ConstraintsResult.Left => tpe match {
           case Aliased(AliasType(_, Right(lower: ParameterizedType), _)) =>

@@ -1,5 +1,6 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.Computable
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScTypeAliasDefinition
 import org.jetbrains.plugins.scala.lang.psi.types.api._
@@ -10,14 +11,39 @@ import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ScDesignatorTy
  * Date: 28.04.2010
  */
 
-trait ScalaEquivalence extends api.Equivalence {
+trait ScalaEquivalence extends api.Equivalence[ScType] {
   typeSystem: api.TypeSystem[ScType] =>
 
-  override protected def equivComputable(key: Key): Computable[ConstraintsResult] = new Computable[ConstraintsResult] {
-    import ConstraintSystem.empty
+  override def equiv(
+    lhs:         ScType,
+    rhs:         ScType,
+    constraints: ScConstraintSystem
+  ): ScConstraintsResult = equivInner(lhs, rhs, constraints)
 
-    override def compute(): ConstraintsResult = {
-      val Key(left, right, falseUndef) = key
+  /**
+    * @param falseUndef use false to consider [[UndefinedType]] type equivalent to any type
+    */
+  final def equivInner(
+    left:        ScType,
+    right:       ScType,
+    constraints: ScConstraintSystem = emptyConstraints,
+    falseUndef:  Boolean = true
+  ): ScConstraintsResult = {
+    ProgressManager.checkCanceled()
+
+    if (left == right) constraints
+    else if (left.canBeSameClass(right)) {
+      val key    = CacheKey(left, right, falseUndef)
+      val result = equivPreventingRecursion(key, equivComputable(key))
+      result.combineWith(constraints)
+    } else ConstraintsResult.Left
+  }
+
+  private def equivComputable(key: CacheKey): Computable[ScConstraintsResult] = new Computable[ScConstraintsResult] {
+    import typeSystem.{emptyConstraints => empty}
+
+    override def compute(): ScConstraintsResult = {
+      val CacheKey(left, right, falseUndef) = key
       left match {
         case designator: ScDesignatorType => designator.getValType match {
           case Some(valType) => return equivInner(valType, right, falseUndef = falseUndef)
