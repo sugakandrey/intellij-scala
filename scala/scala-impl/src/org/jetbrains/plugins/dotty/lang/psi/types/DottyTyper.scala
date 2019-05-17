@@ -46,6 +46,8 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     }
   }
 
+  override protected def widenDefTpe(tpe: DotType): DotType = tpe.widen.widenUnion
+
   private def notImplemented: DotTypeResult = Failure("Not yet implemented")
 
   /* ================================= DEFINITIONS =================================*/
@@ -56,6 +58,7 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     case patDef: ScPatternDefinition    => typedPatDef(patDef)
     case param: ScParameterImpl         => typedParameter(param)
     case tdef: ScTypeDefinition         => typedTypeDef(tdef)
+    case function: ScFunction
   }
 
   private def typedTypeDef(tdef: ScTypeDefinition): DotTypeResult =

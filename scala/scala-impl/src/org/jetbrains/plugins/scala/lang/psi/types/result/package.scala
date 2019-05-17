@@ -78,5 +78,13 @@ package object result {
 
     def flatMapType(implicit ctx: ProjectContext): TypeResult =
       flatMapTypeResult(_.`type`())
+
+    def foldTypeResult[Tpe <: ScalaType](
+      ifEmpty: =>Tpe
+    )(fn:      E => TypeResultT[Tpe]
+    ): TypeResultT[Tpe] = typeable match {
+      case None    => Right(ifEmpty)
+      case Some(t) => fn(t)
+  }
   }
 }

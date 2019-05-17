@@ -10,8 +10,6 @@ import org.jetbrains.plugins.scala.lang.psi.api.ScalaElementVisitor
 import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.stubs.ScFunctionStub
 import org.jetbrains.plugins.scala.lang.psi.stubs.elements.ScFunctionElementType
-import org.jetbrains.plugins.scala.lang.psi.types.api.Unit
-import org.jetbrains.plugins.scala.lang.psi.types.result._
 
 /**
   * @author Alexander Podkhalyuzin
@@ -26,10 +24,5 @@ final class ScFunctionDeclarationImpl private[psi](stub: ScFunctionStub[ScFuncti
     visitor.visitFunctionDeclaration(this)
 
   override def toString: String = "ScFunctionDeclaration: " + ifReadAllowed(name)("")
-
-  override def returnType: TypeResult = returnTypeElement match {
-    case Some(t) => t.`type`()
-    case None => Right(Unit)
-  }
 }
-                                         
+

@@ -311,6 +311,8 @@ abstract class ScFunctionImpl[F <: ScFunction](stub: ScFunctionStub[F],
     }
   }
 
+  def returnType: TypeResult = typeSystem.returnType(this).asSc
+
   override protected def isSimilarMemberForNavigation(m: ScMember, strictCheck: Boolean): Boolean = m match {
     case f: ScFunction => f.name == name && {
       if (strictCheck) new PhysicalMethodSignature(this, ScSubstitutor.empty).
@@ -396,7 +398,6 @@ abstract class ScFunctionImpl[F <: ScFunction](stub: ScFunctionStub[F],
 }
 
 object ScFunctionImpl {
-
   @tailrec
   private def hasParameterClauseImpl(function: ScFunction): Boolean = {
     if (function.effectiveParameterClauses.nonEmpty) return true
