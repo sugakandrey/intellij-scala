@@ -4,9 +4,6 @@ import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.lang.psi.types._
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Conformance, TypeSystem}
 
-/**
-  * @author adkozlov
-  */
 trait DottyConformance extends Conformance[DotType] {
   typeSystem: TypeSystem[DotType] =>
 
@@ -16,6 +13,13 @@ trait DottyConformance extends Conformance[DotType] {
   override def conforms(
     lhs:         DotType,
     rhs:         DotType,
+    constraints: DotConstraintSystem
+  ): DotConstraintsResult = conforms(lhs, rhs, frozen = false, constraints)
+
+  def conforms(
+    lhs:         DotType,
+    rhs:         DotType,
+    frozen:      Boolean = false,
     constraints: DotConstraintSystem
   ): DotConstraintsResult = ???
 }

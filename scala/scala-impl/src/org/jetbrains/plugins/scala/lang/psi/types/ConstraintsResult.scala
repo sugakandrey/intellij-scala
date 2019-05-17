@@ -17,11 +17,42 @@ object ConstraintsResult {
 
   implicit class ConstraintsResultExt[Tpe <: ScalaType](private val result: ConstraintsResult[Tpe])
       extends AnyVal {
-    def isLeft: Boolean  = result eq Left
-    def isRight: Boolean = !isLeft
+
+    @inline final def map(
+      f: ConstraintSystem[Tpe] => ConstraintSystem[Tpe]
+    ): ConstraintsResult[Tpe] =
+      result match {
+        case Left                          => Left
+        case system: ConstraintSystem[Tpe] => f(system)
+      }
+
+    @inline final def flatMap(
+      f: ConstraintSystem[Tpe] => ConstraintsResult[Tpe]
+    ): ConstraintsResult[Tpe] =
+      result match {
+        case Left                          => Left
+        case system: ConstraintSystem[Tpe] => f(system)
+      }
+
+    @inline final def fold[B](ifEmpty: =>B)(f: ConstraintSystem[Tpe] => B): B =
+      if (isLeft) ifEmpty else f(result.asInstanceOf[ConstraintSystem[Tpe]])
+
+    @inline final def foreach[U](f: ConstraintSystem[Tpe] => U) {
+      if (!isLeft) f(result.asInstanceOf[ConstraintSystem[Tpe]])
+    }
+
+    @inline final def withFilter(p: ConstraintSystem[Tpe] => Boolean): ConstraintsResult[Tpe] =
+      result match {
+        case Left                          => Left
+        case system: ConstraintSystem[Tpe] => if (p(system)) system else Left
+      }
+
+    @inline final def isLeft: Boolean = result eq Left
+    final def isRight: Boolean = !isLeft
 
     def constraints(implicit ts: TypeSystem[Tpe]): ConstraintSystem[Tpe] = result match {
-      case Left                          => ts.emptyConstraints
+      case Left => ts.emptyConstraints
+
       case system: ConstraintSystem[Tpe] => system
     }
 
