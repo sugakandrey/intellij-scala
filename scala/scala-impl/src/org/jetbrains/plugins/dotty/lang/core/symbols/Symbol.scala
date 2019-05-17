@@ -32,6 +32,9 @@ trait Symbol {
 
   /** [[DotTermRef]] or [[DotTypeRef]] pointing to this symbol */
   def namedType: DotType
+
+  /** Finds corresponding [[PsiElement]] */
+  def toPsi: Option[PsiElement]
 }
 
 object Symbol {

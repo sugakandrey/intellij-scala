@@ -9,6 +9,7 @@ import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.light.scala.DummyLightTypeParam
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Bivariant, Covariant, Invariant, Nothing, TypeParameterType, TypeSystem, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, Stop}
+import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutorT
 import org.jetbrains.plugins.scala.lang.psi.types.result._
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaType}
 import org.jetbrains.plugins.scala.project.ProjectContext
@@ -31,8 +32,7 @@ sealed trait TypeParameterT[Tpe <: ScalaType] {
 
   def name: String = psiTypeParameter.name
 
-  // TODO: change signature
-  def varianceInType(tpe: ScType): Variance
+  def varianceInType(tpe: Tpe): Variance
 
   def isInvariant: Boolean = psiTypeParameter.asOptionOf[ScTypeParam].exists(t =>
     !t.isCovariant && !t.isContravariant
@@ -55,7 +55,7 @@ object TypeParameterT {
     override def upperType: DotType =
       ts.extractTypeBound(psiTypeParameter, isLower = false).getOrElse(ts.Nothing)
 
-    override def varianceInType(tpe:  ScType): Variance = Variance.Invariant // FIXME
+    override def varianceInType(tpe: DotType): Variance = Variance.Invariant // FIXME
   }
 
   def dot(psi: ScTypeParam)(implicit ts: TypeSystem[DotType]): TypeParameterT[DotType] =
@@ -89,7 +89,7 @@ object TypeParameterT {
             uType: ScType): TypeParameter = StrictTp(psiTypeParameter, typeParameters, lType, uType)
 
   def light(name: String, typeParameters: Seq[TypeParameter], lower: ScType, upper: ScType): TypeParameter =
-    LightTypeParameter(name, typeParameters, lower, upper)
+    LightTypeParameter(name, typeParameters, lower, upper)(lower.projectContext)
 
   def unapply(tp: TypeParameter): Option[(PsiTypeParameter, Seq[TypeParameter], ScType, ScType)] =
     Some(tp.psiTypeParameter, tp.typeParameters, tp.lowerType, tp.upperType)
@@ -122,11 +122,17 @@ object TypeParameterT {
     override def upperType: ScType = javaPsiTypeParameterUpperType(psiTypeParameter)
   }
 
-  private case class LightTypeParameter(override val name: String,
-                                        typeParameters: Seq[TypeParameter],
-                                        override val lowerType: ScType,
-                                        override val upperType: ScType) extends Scala2TypeParameter {
+  private case class LightTypeParameter[Tpe <: ScalaType](
+    override val name:           String,
+    override val typeParameters: Seq[TypeParameterT[Tpe]],
+    override val lowerType:      Tpe,
+    override val upperType:      Tpe,
+    override val variance:       Variance = Invariant
+  )(implicit
+    ctx: ProjectContext
+  ) extends TypeParameterT[Tpe] {
+    override val psiTypeParameter: PsiTypeParameter = new DummyLightTypeParam(name)
 
-    override val psiTypeParameter: PsiTypeParameter = new DummyLightTypeParam(name)(lowerType.projectContext)
+    override def varianceInType(tpe: Tpe): Variance = ???
   }
 }

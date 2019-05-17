@@ -58,8 +58,18 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     case patDef: ScPatternDefinition    => typedPatDef(patDef)
     case param: ScParameterImpl         => typedParameter(param)
     case tdef: ScTypeDefinition         => typedTypeDef(tdef)
-    case function: ScFunction
+    case function: ScFunction           => typedFunction(function)
   }
+
+  private def typedFunction(function: ScFunction): DotTypeResult =
+    returnType(function).map { rTpe =>
+      val paramClauses = function.effectiveParameterClauses
+      if (paramClauses.isEmpty) DotExprType(rTpe)
+      else paramClauses.foldLeft(rTpe) { case (acc, clause) =>
+        val paramTpes = clause.effectiveParameters.map(typedDefinition(_).getOrNothing)
+        FunctionType(paramTpes, acc)(function.elementScope)
+      }
+    }
 
   private def typedTypeDef(tdef: ScTypeDefinition): DotTypeResult =
     Right(TemplateDefSymbol.fromPsi(tdef).typeRef)
@@ -150,7 +160,7 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
   private def typedFunExpr(fun: ScFunctionExpr): DotTypeResult =  {
     val paramTpes = fun.parameters.map(typedDefinition(_).getOrNothing)
     val resultTpe = fun.result.map(typedExpression(_).getOrAny)
-    Right(FunctionType(paramTpes, resultTpe.getOrElse(Unit)))
+    Right(FunctionType(paramTpes, resultTpe.getOrElse(Unit))(fun.elementScope))
   }
 
   private def typedForComp(scFor: ScFor): DotTypeResult = notImplemented
