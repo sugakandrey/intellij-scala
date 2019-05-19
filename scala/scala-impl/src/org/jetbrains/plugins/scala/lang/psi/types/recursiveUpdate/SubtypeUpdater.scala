@@ -4,16 +4,30 @@ import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.lang.psi.types.{ScType, ScalaType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.Variance
 import org.jetbrains.plugins.scala.lang.psi.types.api.Variance.Invariant
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{ProcessSubtypes, ReplaceWith, Stop}
+import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.AfterUpdate.{
+  ProcessSubtypes,
+  ReplaceWith,
+  Stop
+}
 import org.jetbrains.plugins.scala.lang.typeInference.TypeParameterT
+import org.jetbrains.plugins.scala.lang.typeInference.TypeParameter
 
-abstract class SubtypeUpdater[Tpe <: ScalaType](needVariance: Boolean, needUpdate: Boolean) {
+trait SubtypeUpdater[Tpe <: ScalaType] {
   protected implicit def implicitThis: SubtypeUpdater[Tpe] = this
 
-  /** Returns modified version of this traverser, with [[needVariance]] set to `false` */
+  /** Returns an instance of [[SubtypeUpdater]]
+   * suitable for full-blown updates with variance information.
+   */
+  def withVariance: SubtypeUpdater[Tpe]
+
+  /** Returns an instance of [[SubtypeUpdater]]
+   * suitable for updates without variance information.
+   */
   def noVariance: SubtypeUpdater[Tpe]
 
-  /** Returns modified version of this traverser suitable for type inspection only */
+  /** Returns and instance of [[SubtypeUpdater]]
+   * suitable for type inspection only (i.e. no mofication of variance info)
+   */
   def traverser: SubtypeUpdater[Tpe]
 
   def updateSubtypes(
@@ -21,7 +35,7 @@ abstract class SubtypeUpdater[Tpe <: ScalaType](needVariance: Boolean, needUpdat
     variance:    Variance,
     substitutor: ScSubstitutorT[Tpe]
   )(implicit
-    visited: Set[Tpe]
+    visited: Set[ScalaType]
   ): Tpe
 
   def updateTypeParameter(
@@ -29,8 +43,14 @@ abstract class SubtypeUpdater[Tpe <: ScalaType](needVariance: Boolean, needUpdat
     substitutor: ScSubstitutorT[Tpe],
     variance:    Variance = Invariant
   )(implicit
-    visited: Set[Tpe]
-  ): TypeParameterT[Tpe]
+    visited: Set[ScalaType]
+  ): TypeParameterT[Tpe] =
+    TypeParameter(
+      tparam.psiTypeParameter,
+      tparam.typeParameters.map(updateTypeParameter(_, substitutor, variance)),
+      substitutor.recursiveUpdateImpl(tparam.lowerType, variance, isLazySubtype = true),
+      substitutor.recursiveUpdateImpl(tparam.upperType, variance, isLazySubtype = true)
+    )
 
   final def recursiveUpdate(tpe: Tpe, variance: Variance, update: Update[Tpe]): Tpe =
     update(tpe, variance) match {
@@ -41,17 +61,23 @@ abstract class SubtypeUpdater[Tpe <: ScalaType](needVariance: Boolean, needUpdat
 }
 
 object SubtypeUpdater {
-  implicit class TypeParameterUpdateExt[Tpe <: ScalaType](private val typeParameter: TypeParameterT[Tpe])
-      extends AnyVal {
+  implicit class TypeParameterUpdateExt[Tpe <: ScalaType](
+    private val typeParameter: TypeParameterT[Tpe]
+  ) extends AnyVal {
     def update(
       substitutor: ScSubstitutorT[Tpe]
     )(implicit
       updater: SubtypeUpdater[Tpe],
-      visited: Set[Tpe] = Set.empty
+      visited: Set[ScalaType] = Set.empty
     ): TypeParameterT[Tpe] = updater.updateTypeParameter(typeParameter, substitutor)
   }
 
   implicit val scUpdater: SubtypeUpdater[ScType] = ScSubtypeUpdater.defaultUpdater
-  implicit val dotUpdater: SubtypeUpdater[DotType] = ???
-  implicit val anyTpeUpdater: SubtypeUpdater[ScalaType] = ???
+  implicit val dotUpdater: SubtypeUpdater[DotType] = DotSubtypeUpdater.defaultUpdater
+
+  implicit def anyTpeUpdater(
+    implicit
+    scUpdater:  SubtypeUpdater[ScType],
+    dotUpdater: SubtypeUpdater[DotType]
+  ): SubtypeUpdater[ScalaType] = ScalaSubtypeUpdater(scUpdater, dotUpdater)
 }

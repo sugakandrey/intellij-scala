@@ -23,7 +23,7 @@ object DottyDefinitions {
     flags:   EnumSet[Mod],
     parents: Seq[DotType] = Seq.empty
   ): TemplateDefSymbol =
-    TemplateDefSymbol.SyntheticTemplateSymbol(ScalaPkg.toOption, None, name, parents)
+    TemplateDefSymbol.synthetic(ScalaPkg.toOption, None, name, parents)
 
   val AnyNme: String          = "Any"
   val AnyRefName: String      = "AnyRef"

@@ -5,21 +5,22 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.ScTypeParametersOwner
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScProjectionType
 import org.jetbrains.plugins.scala.lang.psi.types.api.{Contravariant, Covariant, Invariant, JavaArrayType, Variance}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
-import org.jetbrains.plugins.scala.lang.psi.types.{ScCompoundType, ScExistentialArgument, ScExistentialType, ScParameterizedType, ScType, TermSignature, TypeAliasSignature}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScCompoundType, ScExistentialArgument, ScExistentialType, ScParameterizedType, ScType, ScalaType, TermSignature, TypeAliasSignature}
 import org.jetbrains.plugins.scala.lang.typeInference.{Parameter, TypeParameter}
 
 final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Boolean)
-    extends SubtypeUpdater[ScType](needVariance, needUpdate) {
+    extends SubtypeUpdater[ScType] {
 
-  override def noVariance: SubtypeUpdater[ScType] = copy(needVariance = false)
-  override def traverser: SubtypeUpdater[ScType]  = copy(needVariance = false, needUpdate = false)
+  override def withVariance: SubtypeUpdater[ScType] = copy(needVariance = true, needUpdate = true)
+  override def noVariance: SubtypeUpdater[ScType]   = copy(needVariance = false, needUpdate = true)
+  override def traverser: SubtypeUpdater[ScType]    = copy(needVariance = false, needUpdate = false)
 
   def updateCompoundType(
     ct:          ScCompoundType,
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType = {
 
     val updSignatureMap = ct.signatureMap.map {
@@ -69,7 +70,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType =
     exArg.copyWithBounds(
       substitutor.recursiveUpdateImpl(exArg.lower, Contravariant, exArg.isLazy),
@@ -81,7 +82,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType = {
     val quantified = exType.quantified
     val updatedQ = substitutor.recursiveUpdateImpl(quantified, variance)
@@ -95,7 +96,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType = {
 
     val designator = pt.designator
@@ -123,7 +124,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType =
     JavaArrayType(substitutor.recursiveUpdateImpl(arrType.argument, Invariant))
 
@@ -132,7 +133,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType = {
 
     val projected = pt.projected
@@ -147,7 +148,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType = {
 
     def updateParameterType(tp: ScType) =
@@ -171,25 +172,11 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType =
     ScTypePolymorphicType(
       substitutor.recursiveUpdateImpl(tpt.internalType, variance),
       tpt.typeParameters.map(updateTypeParameter(_, substitutor, -variance))
-    )
-
-  override def updateTypeParameter(
-    tp:          TypeParameter,
-    substitutor: ScSubstitutor,
-    variance:    Variance = Invariant
-  )(implicit
-    visited: Set[ScType]
-  ): TypeParameter =
-    TypeParameter(
-      tp.psiTypeParameter,
-      tp.typeParameters.map(updateTypeParameter(_, substitutor, variance)),
-      substitutor.recursiveUpdateImpl(tp.lowerType, variance, isLazySubtype = true),
-      substitutor.recursiveUpdateImpl(tp.upperType, variance, isLazySubtype = true)
     )
 
   override def updateSubtypes(
@@ -197,7 +184,7 @@ final case class ScSubtypeUpdater private (needVariance: Boolean, needUpdate: Bo
     variance:    Variance,
     substitutor: ScSubstitutor
   )(implicit
-    visited: Set[ScType]
+    visited: Set[ScalaType]
   ): ScType =
     scType match {
       case t: ScCompoundType        => updateCompoundType(t, variance, substitutor)

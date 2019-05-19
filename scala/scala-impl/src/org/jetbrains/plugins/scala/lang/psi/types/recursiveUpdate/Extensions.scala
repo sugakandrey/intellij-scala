@@ -15,7 +15,7 @@ class Extensions[Tpe <: ScalaType](private val tp: Tpe) extends AnyVal {
   )(implicit
     updater: SubtypeUpdater[Tpe]
   ): Tpe =
-    updater.recursiveUpdate(tp, variance, update)
+    updater.withVariance.recursiveUpdate(tp, variance, update)
 
   //allows most control on what should be done when encountering a type
   def recursiveUpdate(update: SimpleUpdate[Tpe])(implicit updater: SubtypeUpdater[Tpe]): Tpe =

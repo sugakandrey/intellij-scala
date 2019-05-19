@@ -64,7 +64,7 @@ final class ScSubstitutorT[Tpe <: ScalaType] private[recursiveUpdate] (
     if (cacheSubstitutions)
       cache ++= this.allTypeParamsMap
 
-    recursiveUpdateImpl(`type`)(updater.noVariance, Set.empty)
+    recursiveUpdateImpl(`type`)(Set.empty)
   }
 
   //This method allows application of different `Update` functions in a single pass (see ScSubstitutor).
@@ -76,8 +76,7 @@ final class ScSubstitutorT[Tpe <: ScalaType] private[recursiveUpdate] (
     variance:      Variance = Covariant,
     isLazySubtype: Boolean = false
   )(implicit
-    subtypeUpdater: SubtypeUpdater[Tpe],
-    visited:        Set[Tpe] = Set.empty
+    visited: Set[ScalaType] = Set.empty
   ): Tpe =
     if (fromIndex >= substitutions.length || visited(tpe)) tpe
     else {
@@ -85,19 +84,19 @@ final class ScSubstitutorT[Tpe <: ScalaType] private[recursiveUpdate] (
 
       currentUpdate(tpe, variance) match {
         case ReplaceWith(res) =>
-          next.recursiveUpdateImpl(res, variance, isLazySubtype)(subtypeUpdater, visited)
+          next.recursiveUpdateImpl(res, variance, isLazySubtype)(visited)
         case Stop => tpe
         case ProcessSubtypes =>
           val newVisited = if (isLazySubtype) visited + tpe else visited
 
           if (hasNonLeafSubstitutions) {
             val withCurrentUpdate =
-              subtypeUpdater.updateSubtypes(tpe, variance, ScSubstitutorT(currentUpdate))(
+              updater.noVariance.updateSubtypes(tpe, variance, ScSubstitutorT(currentUpdate))(
                 newVisited
               )
-            next.recursiveUpdateImpl(withCurrentUpdate, variance)(subtypeUpdater, Set.empty)
+            next.recursiveUpdateImpl(withCurrentUpdate, variance)(Set.empty)
           } else {
-            subtypeUpdater.updateSubtypes(tpe, variance, this)(newVisited)
+            updater.noVariance.updateSubtypes(tpe, variance, this)(newVisited)
           }
       }
     }
@@ -124,11 +123,14 @@ final class ScSubstitutorT[Tpe <: ScalaType] private[recursiveUpdate] (
     }
   }
 
+  private[recursiveUpdate] def narrow[T <: Tpe](implicit updater: SubtypeUpdater[T]): ScSubstitutorT[T] =
+    new ScSubstitutorT[T](substitutions.map(_.narrow[T]), fromIndex)
+
   override def hashCode(): Int = MurmurHash3.arrayHash(substitutions)
 
   override def equals(obj: Any): Boolean = obj match {
-    case other: ScSubstitutor => other.substitutions sameElements substitutions
-    case _ => false
+    case other: ScSubstitutorT[Tpe] => other.substitutions sameElements substitutions
+    case _                          => false
   }
 
   override def toString: String = {
