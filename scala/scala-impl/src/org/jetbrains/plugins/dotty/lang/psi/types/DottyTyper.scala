@@ -1,27 +1,38 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.psi.PsiModifier
+import com.intellij.psi.{PsiElement, PsiModifier}
+import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeSymbol}
-import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions._
+import org.jetbrains.plugins.dotty.lang.core.DottyDefinitions._
 import org.jetbrains.plugins.dotty.lang.core.types._
 import org.jetbrains.plugins.dotty.lang.core.{Constant, Refinement}
 import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 import org.jetbrains.plugins.scala.lang.psi.api.base.ScLiteral
+import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScPattern, ScTuplePattern, ScTypedPattern, ScWildcardPattern}
 import org.jetbrains.plugins.scala.lang.psi.api.base.types._
 import org.jetbrains.plugins.scala.lang.psi.api.expr._
+import org.jetbrains.plugins.scala.lang.psi.api.expr.xml.{ScXmlCDSect, ScXmlComment, ScXmlElement, ScXmlExpr, ScXmlPI, ScXmlPattern}
 import org.jetbrains.plugins.scala.lang.psi.api.statements._
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinition
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.{ScTypeBoundsOwner, ScTypeParametersOwner}
+import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiManager
 import org.jetbrains.plugins.scala.lang.psi.impl.statements.params.ScParameterImpl
 import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeSystem, Typer}
 import org.jetbrains.plugins.scala.lang.psi.types.result.{DotTypeResult, Typeable, _}
 import org.jetbrains.plugins.scala.lang.resolve.ScalaResolveResult
 import org.jetbrains.plugins.scala.lang.typeInference._
+import org.jetbrains.plugins.scala.project.ProjectContext
 
 trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
-  override def tpe(target: Typeable): TypeResultT[DotType] = notImplemented
+  override def tpe(target: Typeable): TypeResultT[DotType] = target match {
+    case te: ScTypeElement     => typedTypeElement(te)
+    case expr: ScExpression    => typedExpression(expr)
+    case pat: ScPattern        => typedPattern(pat)
+    case defn: ScalaPsiElement => typedDefinition(defn)
+    case other                 => ???
+  }
 
   override def extractTypeBound(
     owner:   ScTypeBoundsOwner,
@@ -48,13 +59,23 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
 
   override protected def widenDefTpe(tpe: DotType): DotType = tpe.widen.widenUnion
 
+  private def classRef(clsName: String, psi: PsiElement): Option[DotTypeRef] =
+    ScalaPsiManager
+      .instance(psi.getProject)
+      .getCachedClass(psi.getResolveScope, clsName)
+      .map(TemplateDefSymbol.fromPsi(_).typeRef)
+
+  private def delegateToTypeElement[E](e: E)(te: E => Option[ScTypeElement]): DotTypeResult =
+    te(e).flatMapTypeResult(typedTypeElement)
+
   private def notImplemented: DotTypeResult = Failure("Not yet implemented")
 
   /* ================================= DEFINITIONS =================================*/
   private def typedDefinition(e: ScalaPsiElement): DotTypeResult = e match {
     case alias: ScTypeAlias             => typedTypeAlias(alias)
+    case valDecl: ScValueDeclaration    => delegateToTypeElement(valDecl)(_.typeElement)
     case varDef: ScVariableDefinition   => typedVarDef(varDef)
-    case varDecl: ScVariableDeclaration => typedVarDecl(varDecl)
+    case varDecl: ScVariableDeclaration => delegateToTypeElement(varDecl)(_.typeElement)
     case patDef: ScPatternDefinition    => typedPatDef(patDef)
     case param: ScParameterImpl         => typedParameter(param)
     case tdef: ScTypeDefinition         => typedTypeDef(tdef)
@@ -87,9 +108,6 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
         }
   }
 
-  private def typedVarDecl(varDecl: ScVariableDeclaration): DotTypeResult =
-    varDecl.typeElement.flatMapTypeResult(typedTypeElement)
-
   private def typedVarDef(varDef: ScVariableDefinition): DotTypeResult = varDef.typeElement match {
     case Some(te) => typedTypeElement(te)
     case None     => varDef.expr.flatMapTypeResult(typedExpression).map(_.widen.widenUnion)
@@ -108,11 +126,14 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
   private def typedExpression(expr: ScExpression): DotTypeResult = expr match {
     case lit: ScLiteral             => typedLiteral(lit)
     case fun: ScFunctionExpr        => typedFunExpr(fun)
+    case tuple: ScTuple => typedTuple(tuple)
+    case scTry: ScTry => typedTry(scTry)
     case block: ScBlock             => typedBlock(block)
     case scIf: ScIf                 => typedIf(scIf)
     case matchExpr: ScMatch         => typedMatch(matchExpr)
     case scFor: ScFor               => typedForComp(scFor)
     case _: ScUnitExpr              => Right(Unit)
+    case xml: ScXmlExpr => typedXmlExpr(xml)
     case thisRef: ScThisReference   => typedThisRef(thisRef)
     case superRef: ScSuperReference => typedSuperRef(superRef)
     case _: ScWhile                 => Right(Unit)
@@ -120,6 +141,30 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     case typed: ScTypedExpression   => typedTypedExpression(typed)
     case other                      => Failure(s"Can't infer type of ${other.getText}")
   }
+
+  private def typedTry(scTry: ScTry): DotTypeResult =
+    typedExpression(scTry.tryBlock).flatMap { tryTpe =>
+
+  }
+
+  private def typedTuple(tuple: ScTuple): DotTypeResult =
+    tuple.exprs.map(typedExpression(_).getOrAny) match {
+      case Seq()  => Right(Unit)
+      case params => Right(TupleType(params)(tuple.elementScope))
+    }
+
+  private def typedXmlExpr(xml: ScXmlExpr): DotTypeResult = xml.getElements.length match {
+    case 0 => Right(Any)
+    case 1 =>
+      xml.getElements.head match {
+        case _: ScXmlElement => classRef("scala.xml.Elem", xml).asTypeResult
+        case _: ScXmlComment => classRef("scala.xml.Comment", xml).asTypeResult
+        case _: ScXmlCDSect  => classRef("scala.xml.Text", xml).asTypeResult
+        case _: ScXmlPI      => classRef("scala.xml.ProcInstr", xml).asTypeResult
+      }
+    case _ => classRef("scala.xml.NodeBuffer", xml).asTypeResult
+  }
+
 
   private def typedIf(scIf: ScIf): DotTypeResult = {
     val thenpTpe = scIf.thenExpression.flatMapTypeResult(typedExpression).getOrAny
@@ -186,12 +231,36 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     }
   }
 
+  /* ===================================== PATTERNS ===================================== */
+  private def typedPattern(pattern: ScPattern): DotTypeResult = pattern match {
+    case tuple: ScTuplePattern => typedTuplePattern(tuple)
+    case typed: ScTypedPattern       => notImplemented
+    case wildcard: ScWildcardPattern => notImplemented // TODO: Expected types
+    case xml: ScXmlPattern           => typedXmlPattern(xml)
+    case pattern                     => notImplemented
+  }
+
+  private def typedTuplePattern(pattern: ScTuplePattern): DotTypeResult = {
+    pattern.patternList match {
+      case None => Failure("Can't infer type of empty tuple pattern")
+      case Some(plist) =>
+        val tpes = plist.patterns.map(typedPattern(_).getOrAny)
+        Right(TupleType(tpes)(pattern.elementScope))
+    }
+  }
+
+  private def typedXmlPattern(xml: ScXmlPattern): DotTypeResult =
+    classRef("scala.xml.Node", xml) match {
+      case Some(ref) => Right(ref)
+      case None      => Failure("Could not locate scala.xml.Node class")
+    }
+
   /* ===================================== TYPE ELEMENTS ===================================== */
   @annotation.tailrec
   private def typedTypeElement(te: ScTypeElement): DotTypeResult = te match {
     case simple: ScSimpleTypeElement               => typedSimpleType(simple)
     case parameterized: ScParameterizedTypeElement => typedParameterizeType(parameterized)
-    case dte: ScDesugarizableTypeElement           => typedDesugarizableType(dte)
+    case dte: ScDesugarizableTypeElement           => delegateToTypeElement(dte)(_.computeDesugarizedType)
     case lambda: ScTypeLambdaTypeElement           => typedTypeLambda(lambda)
     case wc: ScWildcardTypeElement                 => typedWildcardType(wc)
     case proj: ScTypeProjection                    => typedProjectionType(proj)
@@ -208,8 +277,8 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
 
   private def typedWildcardType(wc: ScWildcardTypeElement): DotTypeResult =
     for {
-      lo <- wc.lowerTypeElement.flatMapTypeResult(typedTypeElement)
-      hi <- wc.upperTypeElement.flatMapTypeResult(typedTypeElement)
+      lo <- delegateToTypeElement(wc)(_.lowerTypeElement)
+      hi <- delegateToTypeElement(wc)(_.upperTypeElement)
     } yield DotTypeBounds(lo, hi)
 
   private def traverseTypes[T <: Typeable](
@@ -270,9 +339,10 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
   }
 
   private def typedCompoundType(compound: ScCompoundTypeElement): DotTypeResult = {
-    val parentTpe = compound.components.foldLeft(Any) { case (acc, te) =>
-      acc & typedTypeElement(te).getOrAny
-    }
+    val parentTpe =
+      compound.components.foldLeft(Any) { case (acc, te) =>
+        acc & typedTypeElement(te).getOrAny
+      }
 
     compound.refinement match {
       case Some(scRefinement) =>
@@ -288,8 +358,4 @@ trait DottyTyper extends Typer[DotType] { this: TypeSystem[DotType] =>
     val tparams = lambda.typeParameters.map(TypeParameter.dot)
     resTpe.map(DotHKTypeLambda(tparams, _))
   }
-
-  private def typedDesugarizableType(dte: ScDesugarizableTypeElement): DotTypeResult =
-    dte.computeDesugarizedType.flatMapTypeResult(typedTypeElement)
 }
-

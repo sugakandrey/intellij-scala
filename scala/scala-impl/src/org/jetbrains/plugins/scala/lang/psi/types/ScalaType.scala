@@ -1,7 +1,6 @@
 package org.jetbrains.plugins.scala.lang.psi.types
 
-import org.jetbrains.plugins.scala.lang.psi.types.api.{TypeSystem, Variance}
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutorT
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
 
 import scala.language.implicitConversions
 

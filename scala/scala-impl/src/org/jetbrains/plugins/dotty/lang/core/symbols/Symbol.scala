@@ -3,6 +3,7 @@ package org.jetbrains.plugins.dotty.lang.core.symbols
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.dotty.lang.core.PackageDesignator
 import org.jetbrains.plugins.dotty.lang.core.types._
+import org.jetbrains.plugins.scala.lang.psi.ElementScope
 
 /**
  * Denotes a named, referencable entity in type related infrastructure
@@ -34,7 +35,7 @@ trait Symbol {
   def namedType: DotType
 
   /** Finds corresponding [[PsiElement]] */
-  def toPsi: Option[PsiElement]
+  def toPsi(implicit scope: ElementScope): Option[PsiElement]
 }
 
 object Symbol {

@@ -3,14 +3,11 @@ package org.jetbrains.plugins.dotty.lang.core.symbols
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.dotty.lang.core.symbols.TypeSymbol.TypeSymbolKind
 import org.jetbrains.plugins.dotty.lang.core.types.{DotNoPrefix, DotType, DotTypeRef}
-import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.ScSubstitutor
 import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
 
 /** A symbol representing a type (e.g. type alias, type parameter or template definition) */
 trait TypeSymbol extends Symbol {
   protected def kind: TypeSymbolKind
-
-  protected def substitutor: ScSubstitutor
 
   def typeParameters: Seq[DotTypeParameter]
 

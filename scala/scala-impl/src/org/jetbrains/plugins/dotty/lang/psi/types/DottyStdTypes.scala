@@ -1,6 +1,7 @@
 package org.jetbrains.plugins.dotty.lang.psi.types
 
-import org.jetbrains.plugins.dotty.lang.core.types.{DotType, DottyDefinitions}
+import org.jetbrains.plugins.dotty.lang.core.DottyDefinitions
+import org.jetbrains.plugins.dotty.lang.core.types.DotType
 import org.jetbrains.plugins.scala.lang.psi.types.api.{StdTypes, TypeSystem}
 
 trait DottyStdTypes extends StdTypes[DotType] { this: TypeSystem[DotType] =>

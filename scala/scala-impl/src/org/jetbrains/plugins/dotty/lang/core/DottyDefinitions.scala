@@ -1,16 +1,19 @@
-package org.jetbrains.plugins.dotty.lang.core.types
+package org.jetbrains.plugins.dotty.lang.core
 
-import org.jetbrains.plugins.dotty.lang.core.PackageDesignator
-import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeSymbol}
+import java.util.concurrent.ConcurrentHashMap
+
+import com.intellij.psi.PsiClass
+import org.jetbrains.plugins.dotty.lang.core.symbols.{Symbol, TemplateDefSymbol}
+import org.jetbrains.plugins.dotty.lang.core.symbols.TypeSymbol.TypeSymbolKind
+import org.jetbrains.plugins.dotty.lang.core.types.{DotAppliedType, DotHKTypeLambda, DotTemplateInfo, DotType}
 import org.jetbrains.plugins.scala.extensions._
 import org.jetbrains.plugins.scala.lang.lexer.{ScalaModifier => Mod}
 import org.jetbrains.plugins.scala.lang.psi.ElementScope
-import org.jetbrains.plugins.scala.lang.psi.types.api.StdTypes
-import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
+import org.jetbrains.plugins.scala.lang.psi.types.api.{StdTypes, Variance}
+import org.jetbrains.plugins.scala.lang.typeInference.{DotTypeParameter, TypeParameter}
 import org.jetbrains.plugins.scala.project.ProjectContext
 import org.jetbrains.plugins.scala.util.EnumSet
 import org.jetbrains.plugins.scala.util.EnumSet.EnumSet
-import java.util.concurrent.ConcurrentHashMap
 
 object DottyDefinitions {
   private[this] val maxImplementedFunctionArity: Int = 22
@@ -23,7 +26,7 @@ object DottyDefinitions {
     flags:   EnumSet[Mod],
     parents: Seq[DotType] = Seq.empty
   ): TemplateDefSymbol =
-    TemplateDefSymbol.synthetic(ScalaPkg.toOption, None, name, parents)
+    TemplateDefSymbol.synthetic(ScalaPkg.toOption, name, parents)
 
   val AnyNme: String          = "Any"
   val AnyRefName: String      = "AnyRef"
@@ -40,24 +43,13 @@ object DottyDefinitions {
   def AnyValClass: TemplateDefSymbol  = scalaStdClass(AnyValNme, EnumSet(Mod.Abstract), Seq(AnyTpe))
   def NothingClass: TemplateDefSymbol = scalaStdClass(NothingNme, EnumSet(Mod.Abstract, Mod.Final), Seq(AnyTpe))
 
-  def TupleNClass(arity: Int)(implicit scope: ElementScope): TemplateDefSymbol = ???
+  def TupleNClass(arity: Int)(implicit scope: ElementScope): TemplateDefSymbol = {
+    ???
+  }
 
   def FunctionNClass(arity: Int)(implicit scope: ElementScope): TemplateDefSymbol = {
     val className = s"Function$arity"
-    functionNSymbolCache.computeIfAbsent(className, _ => {
-      val tparams: Seq[DotTypeParameter] = ???
-//      new TemplateDefSymbol.SyntheticTemplateSymbol(
-//        ScalaPkg.toOption,
-//        None,
-//        className,
-//        Seq(AnyRefTpe),
-//        kind = TypeSymbol.TypeSymbolKind.Trait,
-//        typeParameters = tparams
-//      ) {
-//
-//      }
-      ???
-    })
+    functionNSymbolCache.computeIfAbsent(className, _ => FunctionNSymbol(arity))
   }
 
   lazy val AnyTpe: DotType     = AnyClass.typeRef
@@ -66,8 +58,11 @@ object DottyDefinitions {
   lazy val NothingTpe: DotType = NothingClass.typeRef
   lazy val UnitTpe: DotType    = NothingClass.typeRef
 
-  def FunctionType(arity: Int)(implicit scope: ElementScope): DotType =
+  def FunctionTypeRef(arity: Int)(implicit scope: ElementScope): DotType =
     FunctionNClass(arity).typeRef
+
+  def TupleNTypeRef(arity: Int)(implicit scope: ElementScope): DotType =
+    TupleNClass(arity).typeRef
 
   /** Higher-kinded `Any` type, used in type bounds.
    * If [[tparams]] is empty returns simple kinded `Any` type instead.
@@ -75,13 +70,40 @@ object DottyDefinitions {
   def HKAny(tparams: Seq[DotTypeParameter])(implicit std: StdTypes[DotType]): DotType =
     DotHKTypeLambda(tparams, std.Any)
 
+  def TupleType(paramTpes: Seq[DotType])(implicit scope: ElementScope): DotType = {
+    val tupleNType = TupleNTypeRef(paramTpes.size)
+    DotAppliedType(tupleNType, paramTpes)
+  }
+
   def FunctionType(
     paramTpes: Seq[DotType],
     resTpe:    DotType
   )(implicit
     scope: ElementScope
   ): DotType = {
-    val functionNType = FunctionType(paramTpes.size)
+    val functionNType = FunctionTypeRef(paramTpes.size)
     DotAppliedType(functionNType, paramTpes.toList)
+  }
+
+  private final case class FunctionNSymbol(arity: Int)(implicit ctx: ProjectContext /* TODO: remove */) extends TemplateDefSymbol {
+    override def name: String                             = s"Function$arity"
+    override def owner: Option[Symbol]                    = None
+    override def packagePrefix: Option[PackageDesignator] = ScalaPkg.toOption
+    override protected def kind: TypeSymbolKind           = TypeSymbolKind.Trait
+
+    override def typeParameters: Seq[DotTypeParameter] = {
+      def typeParam(name: String, variance: Variance): DotTypeParameter =
+        TypeParameter.light(name, Seq.empty, NothingTpe, AnyTpe, variance)
+
+      val resultTypeParam = typeParam("R", Variance.Covariant)
+      val argTypeParams   = (1 until arity).map(idx => typeParam("T" + idx, Variance.Contravariant))
+      argTypeParams :+ resultTypeParam
+    }
+
+    override def toPsi(implicit scope: ElementScope): Option[PsiClass] =
+      if (arity <= maxImplementedFunctionArity) scope.getCachedClass(name)
+      else                                      None
+
+    override def tpe: DotTemplateInfo = ???
   }
 }

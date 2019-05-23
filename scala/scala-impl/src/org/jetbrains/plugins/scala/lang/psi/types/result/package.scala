@@ -30,10 +30,10 @@ package object result {
     }
   }
 
-  implicit class OptionTypeExt(private val maybeRight: Option[ScType]) extends AnyVal {
-    def asTypeResult(implicit context: ProjectContext): TypeResult = maybeRight match {
+  implicit class OptionTypeExt[Tpe <: ScalaType](private val maybeRight: Option[Tpe]) extends AnyVal {
+    def asTypeResult(implicit context: ProjectContext): TypeResultT[Tpe] = maybeRight match {
       case Some(result) => Right(result)
-      case None => Failure("")
+      case None         => Failure("")
     }
   }
 

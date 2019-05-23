@@ -2,7 +2,7 @@ package org.jetbrains.plugins.scala.lang.typeInference
 
 import com.intellij.psi.PsiTypeParameter
 import org.jetbrains.plugins.dotty.lang.core.symbols.TypeParamSymbol
-import org.jetbrains.plugins.dotty.lang.core.types.DottyDefinitions.HKAny
+import org.jetbrains.plugins.dotty.lang.core.DottyDefinitions.HKAny
 import org.jetbrains.plugins.dotty.lang.core.types.{DotType, DotTypeRef}
 import org.jetbrains.plugins.scala.extensions.{ObjectExt, PsiNamedElementExt}
 import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScTypeParam, TypeParamIdOwner}

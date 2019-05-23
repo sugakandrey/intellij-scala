@@ -4,6 +4,7 @@ package types
 import org.jetbrains.plugins.dotty.lang.core.symbols.{Symbol, TemplateDefSymbol, TermSymbol, TypeSymbol}
 import org.jetbrains.plugins.dotty.lang.core.types.api._
 import org.jetbrains.plugins.dotty.lang.psi.types.DottyTypeSystem
+import org.jetbrains.plugins.scala.lang.psi.types.recursiveUpdate.DotSubstitutor
 import org.jetbrains.plugins.scala.lang.psi.types.{LeafType, ScalaType, recursiveUpdate}
 import org.jetbrains.plugins.scala.lang.typeInference.{DotParameter, DotTypeParameter}
 
@@ -177,10 +178,22 @@ final case class DotTypeVar(paramRef: DotTypeParameter)
 sealed trait DotGroundType extends DotType
 
 /** Intersection type [[lhs]] & [[rhs]] */
-final case class DotAndType private (
+abstract case class DotAndType private (
   lhs: DotType,
   rhs: DotType
 ) extends DotAndTypeApi with DotGroundType
+
+object DotAndType {
+  def apply(lhs: DotType, rhs: DotType): DotType = {
+    assert(
+      lhs.isValueOrWildcard && rhs.isValueOrWildcard,
+      "Incorrect operands to DotAndType, must be value or wildcard types"
+    )
+    if ((lhs eq rhs) || rhs.isAny) lhs
+    else if (lhs.isAny) rhs
+    else new DotAndType(lhs, rhs) {}
+  }
+}
 
 /** Union type [[lhs]] | [[rhs]] */
 final case class DotOrType private (
@@ -241,7 +254,11 @@ final case class DotMatchType private (scrutinee: DotType, bound: DotType, cases
     extends DotMatchTypeApi
     with DotProxyType
 
-final case class DotTemplateInfo private (tdef: TemplateDefSymbol)
+final case class DotTemplateInfo private (
+                                           tdef: TemplateDefSymbol,
+                                           substitutor: DotSubstitutor,
+                                           declarations:
+                                         )
     extends DotTemplateInfoApi
     with DotGroundType
     with DotTypeType

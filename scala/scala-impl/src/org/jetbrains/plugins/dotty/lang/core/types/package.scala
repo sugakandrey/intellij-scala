@@ -1,15 +1,29 @@
 package org.jetbrains.plugins.dotty.lang.core
 
-import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeSymbol}
+import org.jetbrains.plugins.dotty.lang.core.symbols.{TemplateDefSymbol, TypeAliasSymbol, TypeSymbol}
 import org.jetbrains.plugins.scala.extensions._
+import org.jetbrains.plugins.scala.lang.psi.types.api.TypeSystem
 import org.jetbrains.plugins.scala.lang.typeInference.DotTypeParameter
 
 package object types {
   implicit class DotTypeApi(private val tpe: DotType) extends AnyVal {
-    def isAny: Boolean     = tpe == tpe.typeSystem.Any
-    def isNothing: Boolean = tpe == tpe.typeSystem.Nothing
+    @inline final def isAny: Boolean     = tpe == tpe.typeSystem.Any
+    @inline final def isNothing: Boolean = tpe == tpe.typeSystem.Nothing
 
-    def &(rhs: DotType): DotAndType = DotAndType(tpe, rhs)
+    @inline final def &(rhs: DotType): DotType = tpe.typeSystem.glb(tpe, rhs)
+    @inline final def |(rhs: DotType): DotType = tpe.typeSystem.lub(tpe, rhs)
+
+    final def <:<(other: DotType)(implicit ts: TypeSystem[DotType]): Boolean =
+      ts.conforms(tpe, other, ts.emptyConstraints).isRight
+
+    final def =:=(other: DotType)(implicit ts: TypeSystem[DotType]): Boolean =
+      ts.equiv(tpe, other)
+
+    final def isValueOrWildcard: Boolean = tpe match {
+      case _: DotWildcardType => true
+      case _: DotValueType    => true
+      case _                  => false
+    }
 
     final def hiBound: DotType = tpe match {
       case DotTypeBounds(_, hi) => hi
@@ -22,10 +36,29 @@ package object types {
       case _                 => tpe
     }
 
+    @annotation.tailrec
+    final def dealias: DotType = tpe match {
+      case tref @ DotTypeRef(_, sym) if sym.isAlias => tref.superType.dealias
+      case _                                        => tpe
+    }
+
+    final def appliedTo(args: Seq[DotType]): DotType =
+    if (args.isEmpty) tpe
+    else {
+      val dealiased = tpe.dealias
+      dealiased match {
+        case bounds: DotTypeBounds => bounds.updateRecursively {
+
+        }
+        case t if t.isNothing => t
+        case _ => DotAppliedType(tpe, args)
+      }
+    }
+
     /**
-      * Widen from [[DotSingletonType]] to it's underlying non-singleton type
-      * applying one or more `.underlying` conversions.
-      */
+     * Widen from [[DotSingletonType]] to it's underlying non-singleton type
+     * applying one or more `.underlying` conversions.
+     */
     @annotation.tailrec
     final def widenSingleton: DotType = tpe match {
       case singleton: DotSingletonType => singleton.underlying.widenSingleton
@@ -53,14 +86,14 @@ package object types {
     final def typeParams: Seq[DotTypeParameter] = typeParams(tpe)
 
     /**
-      * - For [[DotTemplateInfo]] type parameters of it's underlying template
-      * - For [[DotTypeRef]] type parameters of the
-      * - For [[DotRefinedType]] type parameters of it's parent type
-      * @return
-      */
+     * - For [[DotTemplateInfo]] type parameters of it's underlying template
+     * - For [[DotTypeRef]] type parameters of the
+     * - For [[DotRefinedType]] type parameters of it's parent type
+     * @return
+     */
     private final def typeParams(tp: DotType): Seq[DotTypeParameter] = tp match {
-      case DotTypeRef(_, symbol)                   => symbol.typeParameters
-      case tInfo: DotTemplateInfo                  => ???
+      case DotTypeRef(_, symbol)  => symbol.typeParameters
+      case tInfo: DotTemplateInfo => ???
 //      case wc: DotWildcardType                     => wc.bounds.fold(Nil)(_.typeParams)
       case lambda: DotHKTypeLambda                 => lambda.typeParams
       case _: DotSingletonType | _: DotRefinedType => Nil
@@ -70,7 +103,7 @@ package object types {
 
     final def applyIfParameterized(targs: Seq[DotType]): DotType =
       if (typeParams(tpe).nonEmpty) DotAppliedType(tpe, targs)
-      else                          tpe
+      else tpe
 
     /** The type symbol associated with [[tpe]] */
     @annotation.tailrec
@@ -86,7 +119,7 @@ package object types {
       case ctp: DotConstantType => ctp.underlying.tdefSymbol
       case tref @ DotTypeRef(_, sym) =>
         if (sym.isTemplate) sym.tdefSymbol.toOption
-        else                tref.superType.tdefSymbol
+        else tref.superType.tdefSymbol
       case info: DotTemplateInfo => info.tdef.toOption
       case _: DotSingletonType   => None
       case proxy: DotProxyType   => proxy.underlying.tdefSymbol
@@ -94,17 +127,17 @@ package object types {
         for {
           lsym <- lhs.tdefSymbol
           rsym <- rhs.tdefSymbol
-          res  <- if (lsym.isSubClass(rsym)) lsym.toOption
-          else if (rsym.isSubClass(lsym)) rsym.toOption
-          else None
+          res <- if (lsym.isSubClass(rsym)) lsym.toOption
+                else if (rsym.isSubClass(lsym)) rsym.toOption
+                else None
         } yield res
       case DotOrType(lhs, rhs) =>
         for {
           lsym <- lhs.tdefSymbol
           rsym <- rhs.tdefSymbol
-          res  <- if (lsym.isSubClass(rsym)) rsym.toOption
-          else if (rsym.isSubClass(lsym)) lsym.toOption
-          else None
+          res <- if (lsym.isSubClass(rsym)) rsym.toOption
+                else if (rsym.isSubClass(lsym)) lsym.toOption
+                else None
         } yield res
       case _ => None
     }
